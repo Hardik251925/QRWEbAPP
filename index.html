@@ -184,9 +184,9 @@ function loadUnity() {
   script.src = "QRWebApp.loader.js";
   script.onload = function() {
     createUnityInstance(document.querySelector("#unity-canvas"), {
-      dataUrl: "QRWebApp.data.unityweb",
-      frameworkUrl: "QRWebApp.framework.js.unityweb",
-      codeUrl: "QRWebApp.wasm.unityweb",
+      dataUrl: "QRWebApp.data",
+      frameworkUrl: "QRWebApp.framework.js",
+      codeUrl: "QRWebApp.wasm",
       streamingAssetsUrl: "StreamingAssets",
       companyName: "Pynet",
       productName: "QR_WEB_GL",
