@@ -6,7 +6,7 @@
   <title>QR_WEB_GL</title>
   <style>
     * { margin:0; padding:0; box-sizing:border-box; }
-    html, body { width:100%; height:100%; overflow:hidden; background:#000; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; color:#fff; }
+    html, body { width:100%; height:100%; overflow:hidden; background:#000; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; color:#fff; -webkit-user-select:none; user-select:none; }
     #unity-container { width:100%; height:100%; position:absolute; top:0; left:0; display:none; }
     #unity-canvas { width:100%; height:100%; background:transparent; }
     .screen { position:fixed; top:0; left:0; width:100%; height:100%; display:none; flex-direction:column; align-items:center; justify-content:center; background:#111; z-index:100; padding:24px; }
@@ -17,7 +17,6 @@
     .progress-bar .seg.current { background:#4A90D9; }
     .btn { width:85%; max-width:340px; padding:16px; border:none; border-radius:12px; font-size:17px; font-weight:600; cursor:pointer; }
     .btn-primary { background:#F5A623; color:#000; }
-    .btn-primary:disabled { background:#666; color:#999; }
     .btn-bottom { position:absolute; bottom:40px; }
     .screen h1 { font-size:22px; font-weight:600; margin-bottom:8px; text-align:center; }
     .screen p { font-size:14px; color:#aaa; text-align:center; line-height:1.5; }
@@ -25,18 +24,27 @@
     @keyframes spin { to { transform:rotate(360deg); } }
     #load-percent { font-size:20px; font-weight:700; color:#4A90D9; }
     #outline-img { max-width:70%; max-height:45vh; object-fit:contain; margin:16px 0; }
-    #ar-scan-overlay { position:fixed; top:0; left:0; width:100%; height:100%; z-index:50; display:none; pointer-events:none; }
-    #ar-scan-overlay.active { display:block; }
-    #ar-scan-title { position:absolute; top:60px; left:20px; font-size:18px; font-weight:600; z-index:2; text-shadow:0 1px 4px rgba(0,0,0,0.8); }
-    #ar-scan-outline { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:55%; max-height:55vh; object-fit:contain; opacity:0.5; z-index:2; }
-    #ar-scan-status { position:absolute; bottom:80px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.75); padding:10px 20px; border-radius:8px; font-size:14px; text-align:center; z-index:2; }
-    #ar-scan-progress { position:absolute; bottom:130px; left:50%; transform:translateX(-50%); width:200px; height:6px; background:rgba(255,255,255,0.2); border-radius:3px; z-index:2; display:none; }
-    #ar-scan-progress-fill { width:0%; height:100%; background:#4CAF50; border-radius:3px; transition:width 0.3s; }
+    #ar-camera-feed { position:fixed; top:0; left:0; width:100%; height:100%; object-fit:cover; z-index:1; display:none; }
+
+    /* AR Scanning Screen */
+    #ar-scan-screen { position:fixed; top:0; left:0; width:100%; height:100%; z-index:50; display:none; flex-direction:column; align-items:center; }
+    #ar-scan-screen.active { display:flex; }
+    #ar-scan-screen .title { margin-top:60px; font-size:20px; font-weight:600; text-shadow:0 2px 6px rgba(0,0,0,0.9); z-index:3; }
+    #ar-scan-screen .outline-container { flex:1; display:flex; align-items:center; justify-content:center; z-index:3; }
+    #ar-scan-screen .outline-container img { width:60%; max-height:50vh; object-fit:contain; opacity:0.5; animation:pulse-outline 2s ease-in-out infinite; }
+    @keyframes pulse-outline { 0%,100%{ opacity:0.4; } 50%{ opacity:0.7; } }
+    #ar-scan-screen .bottom-area { padding:20px; padding-bottom:50px; z-index:3; display:flex; flex-direction:column; align-items:center; gap:12px; }
+    #ar-scan-screen .status-text { font-size:14px; color:#ccc; text-align:center; background:rgba(0,0,0,0.6); padding:8px 16px; border-radius:8px; }
+    #ar-scan-screen .lock-btn { padding:16px 48px; background:#4CAF50; color:#fff; border:none; border-radius:14px; font-size:18px; font-weight:700; cursor:pointer; animation:pulse-btn 1.5s ease-in-out infinite; pointer-events:auto; }
+    @keyframes pulse-btn { 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.05); box-shadow:0 0 20px rgba(76,175,80,0.5); } }
+
+    /* Success */
     #scan-success { position:fixed; top:0; left:0; width:100%; height:100%; z-index:60; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,0.5); }
     #scan-success.active { display:flex; }
-    #scan-success .msg { background:rgba(0,0,0,0.85); padding:20px 28px; border-radius:14px; text-align:center; }
-    #scan-success .msg h2 { color:#4CAF50; font-size:20px; margin-bottom:6px; }
-    #ar-camera-feed { position:fixed; top:0; left:0; width:100%; height:100%; object-fit:cover; z-index:1; display:none; }
+    #scan-success .msg { background:rgba(0,0,0,0.85); padding:24px 32px; border-radius:16px; text-align:center; animation:pop-in 0.3s ease; }
+    @keyframes pop-in { from { transform:scale(0.8); opacity:0; } to { transform:scale(1); opacity:1; } }
+    #scan-success .msg h2 { color:#4CAF50; font-size:22px; margin-bottom:6px; }
+    #scan-success .msg p { color:#ccc; font-size:15px; }
   </style>
 </head>
 <body>
@@ -73,7 +81,7 @@
   <button class="btn btn-primary btn-bottom" onclick="goScreen('screen-outline')">Next</button>
 </div>
 
-<!-- SCREEN 4: OUTLINE -->
+<!-- SCREEN 4: OUTLINE GUIDE -->
 <div id="screen-outline" class="screen">
   <div class="progress-bar"><div class="seg done"></div><div class="seg done"></div><div class="seg done"></div><div class="seg current"></div></div>
   <h1 id="outline-title">Bring your heart in View</h1>
@@ -82,19 +90,23 @@
   <button class="btn btn-primary btn-bottom" onclick="startARScanning()">Start Scanning</button>
 </div>
 
-<!-- AR OVERLAY -->
-<div id="ar-scan-overlay">
-  <div id="ar-scan-title">Bring your heart in View</div>
-  <img id="ar-scan-outline" src="heartOutline.png" alt="Outline">
-  <div id="ar-scan-progress"><div id="ar-scan-progress-fill"></div></div>
-  <div id="ar-scan-status">Initializing camera...</div>
+<!-- AR SCANNING SCREEN (camera + outline overlay + lock button) -->
+<div id="ar-scan-screen">
+  <div class="title" id="ar-scan-title">Bring your heart in View</div>
+  <div class="outline-container">
+    <img id="ar-scan-outline" src="heartOutline.png" alt="Outline">
+  </div>
+  <div class="bottom-area">
+    <div class="status-text">Align the model with the outline, then tap the button</div>
+    <button class="lock-btn" onclick="lockModel()">&#10003; Model Aligned - Lock It</button>
+  </div>
 </div>
 
 <!-- SUCCESS -->
 <div id="scan-success">
   <div class="msg">
     <h2>Brilliant!</h2>
-    <p id="success-text">Let's learn more about it</p>
+    <p>Let's learn more about it</p>
   </div>
 </div>
 
@@ -104,18 +116,10 @@
 </div>
 
 <script src="Build/QRWebApp.loader.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image.prod.js"></script>
 
 <script>
-var CONFIG = {
-  targetFile: "targets.mind",
-  stableFrames: 5,
-  arControllerObject: "ARController"
-};
-
 var unityInstance = null;
 var isLocked = false;
-var trackCount = 0;
 var cameraStream = null;
 
 function goScreen(id) {
@@ -142,8 +146,9 @@ createUnityInstance(document.querySelector("#unity-canvas"), {
   document.getElementById('load-percent').textContent = 'Error: ' + err;
 });
 
-// START AR
+// START AR SCANNING
 function startARScanning() {
+  // Hide all screens
   document.querySelectorAll('.screen').forEach(function(s) { s.classList.remove('active'); });
 
   var video = document.getElementById('ar-camera-feed');
@@ -156,109 +161,34 @@ function startARScanning() {
     video.style.display = 'block';
     video.play();
 
-    // Show Unity behind camera + overlay on top
+    // Show Unity + scan screen
     document.getElementById('unity-container').style.display = 'block';
-    document.getElementById('ar-scan-overlay').classList.add('active');
-    document.getElementById('ar-scan-progress').style.display = 'block';
-    document.getElementById('ar-scan-status').textContent = 'Loading AR tracker...';
+    document.getElementById('ar-scan-screen').classList.add('active');
 
     sendToUnity('OnARStarted', '');
 
-    // Wait for video to be ready then start MindAR
-    video.addEventListener('loadeddata', function() {
-      startMindARDetection(video);
-    }, { once: true });
-
   }).catch(function(err) {
-    alert('Camera access needed. Please allow camera permission.');
+    alert('Camera permission needed.');
   });
 }
 
-function startMindARDetection(video) {
-  var controller = new window.MINDAR.IMAGE.Controller({
-    inputWidth: video.videoWidth || 640,
-    inputHeight: video.videoHeight || 480,
-    maxTrack: 1,
-    filterMinCF: 0.00001,
-    filterBeta: 10000,
-    missTolerance: 20,
-    warmupTolerance: 0,
-  });
-
-  controller.addImageTargets(CONFIG.targetFile).then(function() {
-    document.getElementById('ar-scan-status').textContent = 'Point camera at the heart model...';
-
-    var canvas = document.createElement('canvas');
-    var ctx = canvas.getContext('2d');
-
-    function processFrame() {
-      if (isLocked) return;
-      if (video.readyState < 2) { requestAnimationFrame(processFrame); return; }
-
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      ctx.drawImage(video, 0, 0);
-      var imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-
-      var grey = new Uint8Array(canvas.width * canvas.height);
-      for (var i = 0; i < grey.length; i++) {
-        var p = i * 4;
-        grey[i] = Math.round(imgData.data[p] * 0.299 + imgData.data[p+1] * 0.587 + imgData.data[p+2] * 0.114);
-      }
-
-      var result = controller.detect(grey);
-
-      if (result.length > 0 && result[0] !== null) {
-        trackCount++;
-        var pct = Math.min(trackCount / CONFIG.stableFrames, 1);
-        document.getElementById('ar-scan-progress-fill').style.width = (pct * 100) + '%';
-        document.getElementById('ar-scan-status').textContent = 'Tracking... hold steady! (' + Math.round(pct * 100) + '%)';
-        document.getElementById('ar-scan-outline').style.opacity = '0.15';
-        sendToUnity('OnImageFound', '');
-
-        if (trackCount >= CONFIG.stableFrames) {
-          lockModel();
-          return;
-        }
-      } else {
-        trackCount = Math.max(0, trackCount - 1);
-        var pct = Math.min(trackCount / CONFIG.stableFrames, 1);
-        document.getElementById('ar-scan-progress-fill').style.width = (pct * 100) + '%';
-        document.getElementById('ar-scan-outline').style.opacity = '0.5';
-        if (trackCount === 0) {
-          document.getElementById('ar-scan-status').textContent = 'Point camera at the heart model...';
-        }
-      }
-
-      requestAnimationFrame(processFrame);
-    }
-
-    requestAnimationFrame(processFrame);
-
-  }).catch(function(err) {
-    console.error('[MindAR] Error:', err);
-    document.getElementById('ar-scan-status').textContent = 'Tracker error - tap below when you see the model';
-
-    var btn = document.createElement('button');
-    btn.textContent = 'I see the model - Lock it';
-    btn.style.cssText = 'position:fixed;bottom:30px;left:50%;transform:translateX(-50%);z-index:200;padding:14px 28px;background:#4CAF50;color:#fff;border:none;border-radius:12px;font-size:16px;font-weight:600;cursor:pointer;';
-    btn.onclick = function() { lockModel(); btn.remove(); };
-    document.body.appendChild(btn);
-  });
-}
-
+// LOCK MODEL - user taps when they see model aligned
 function lockModel() {
   if (isLocked) return;
   isLocked = true;
 
-  document.getElementById('ar-scan-overlay').classList.remove('active');
+  // Hide scan screen
+  document.getElementById('ar-scan-screen').classList.remove('active');
 
+  // Show success
   var s = document.getElementById('scan-success');
   s.classList.add('active');
   setTimeout(function() { s.classList.remove('active'); }, 2500);
 
+  // Tell Unity to spawn model
   sendToUnity('OnModelLocked', '');
 
+  // Stop camera after delay
   setTimeout(function() {
     if (cameraStream) cameraStream.getTracks().forEach(function(t) { t.stop(); });
     document.getElementById('ar-camera-feed').style.display = 'none';
@@ -266,7 +196,7 @@ function lockModel() {
 }
 
 function sendToUnity(method, data) {
-  if (unityInstance) unityInstance.SendMessage(CONFIG.arControllerObject, method, data);
+  if (unityInstance) unityInstance.SendMessage('ARController', method, data);
 }
 </script>
 </body>
