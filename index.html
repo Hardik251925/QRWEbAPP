@@ -218,7 +218,7 @@ function startDetection(video) {
 
 function runDetection(video) {
   var detectCount = 0;
-  var REQUIRED_DETECTIONS = 3; // 3 consecutive detections = lock
+  var REQUIRED_DETECTIONS = 1; // 1 detection = instant lock
 
   function detect() {
     if (isLocked) return;
