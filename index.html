@@ -7,65 +7,49 @@
   <style>
     * { margin:0; padding:0; box-sizing:border-box; }
     html, body { width:100%; height:100%; overflow:hidden; background:#000; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; color:#fff; }
-
-    /* ===== UNITY CANVAS ===== */
     #unity-container { width:100%; height:100%; position:absolute; top:0; left:0; display:none; }
     #unity-canvas { width:100%; height:100%; background:transparent; }
-
-    /* ===== ONBOARDING SCREENS ===== */
     .screen { position:fixed; top:0; left:0; width:100%; height:100%; display:none; flex-direction:column; align-items:center; justify-content:center; background:#111; z-index:100; padding:24px; }
     .screen.active { display:flex; }
-
-    /* Progress bar at top */
     .progress-bar { position:absolute; top:0; left:0; width:100%; height:4px; display:flex; gap:4px; padding:12px 16px; }
     .progress-bar .seg { flex:1; height:4px; background:#333; border-radius:2px; }
     .progress-bar .seg.done { background:#4A90D9; }
     .progress-bar .seg.current { background:#4A90D9; }
-
-    /* Back button */
     .back-btn { position:absolute; top:20px; left:16px; width:36px; height:36px; border-radius:50%; border:1px solid #555; background:transparent; color:#fff; font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center; z-index:10; }
-
-    /* Common button */
     .btn { width:85%; max-width:340px; padding:16px; border:none; border-radius:12px; font-size:17px; font-weight:600; cursor:pointer; transition:all 0.2s; }
     .btn-primary { background:#F5A623; color:#000; }
     .btn-primary:hover { background:#E09515; }
     .btn-primary:disabled { background:#666; color:#999; cursor:not-allowed; }
     .btn-bottom { position:absolute; bottom:40px; }
-
     .screen h1 { font-size:22px; font-weight:600; margin-bottom:8px; text-align:center; }
     .screen p { font-size:14px; color:#aaa; text-align:center; line-height:1.5; }
-
-    /* ===== SCREEN 1: LOADING ===== */
     #screen-loading .loader-circle { width:100px; height:100px; border-radius:50%; border:4px solid #333; border-top-color:#4A90D9; animation:spin 1s linear infinite; margin:20px 0; }
     @keyframes spin { to { transform:rotate(360deg); } }
     #load-percent { font-size:20px; font-weight:700; color:#4A90D9; }
-
-    /* ===== SCREEN 3: OUTLINE GUIDE ===== */
     #outline-img { max-width:70%; max-height:45vh; object-fit:contain; margin:16px 0; }
-
-    /* ===== AR OVERLAY ===== */
-    #ar-overlay { position:fixed; top:0; left:0; width:100%; height:100%; z-index:50; display:none; pointer-events:none; }
-    #ar-overlay.active { display:block; }
-    #ar-outline-overlay { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:60%; max-height:60vh; object-fit:contain; opacity:0.5; pointer-events:none; }
-    #ar-status { position:absolute; bottom:80px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.7); padding:10px 20px; border-radius:8px; font-size:14px; text-align:center; pointer-events:none; }
-    #ar-title { position:absolute; top:60px; left:20px; font-size:18px; font-weight:600; pointer-events:none; }
-
-    /* ===== SCAN SUCCESS ===== */
-    #scan-success { position:fixed; top:0; left:0; width:100%; height:100%; z-index:60; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,0.5); pointer-events:none; }
-    #scan-success.active { display:flex; }
-    #scan-success .msg { background:rgba(0,0,0,0.8); padding:16px 24px; border-radius:12px; text-align:center; }
-    #scan-success .msg h2 { color:#4CAF50; font-size:18px; margin-bottom:4px; }
-
-    /* ===== VIDEO BG for camera ===== */
+    #ar-scan-overlay { position:fixed; top:0; left:0; width:100%; height:100%; z-index:50; display:none; }
+    #ar-scan-overlay.active { display:block; }
+    #ar-scan-title { position:absolute; top:60px; left:20px; font-size:18px; font-weight:600; z-index:2; text-shadow:0 1px 4px rgba(0,0,0,0.8); }
+    #ar-scan-outline { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:55%; max-height:55vh; object-fit:contain; opacity:0.45; z-index:2; pointer-events:none; transition:opacity 0.3s; }
+    #ar-scan-status { position:absolute; bottom:80px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.75); padding:10px 20px; border-radius:8px; font-size:14px; text-align:center; z-index:2; }
+    #ar-scan-progress { position:absolute; bottom:130px; left:50%; transform:translateX(-50%); width:200px; height:6px; background:rgba(255,255,255,0.2); border-radius:3px; z-index:2; display:none; }
+    #ar-scan-progress-fill { width:0%; height:100%; background:#4CAF50; border-radius:3px; transition:width 0.1s; }
     #camera-video { position:fixed; top:0; left:0; width:100%; height:100%; object-fit:cover; z-index:-1; display:none; }
+    #capture-canvas { display:none; }
+    #ref-image { display:none; }
+    #scan-success { position:fixed; top:0; left:0; width:100%; height:100%; z-index:60; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,0.5); }
+    #scan-success.active { display:flex; }
+    #scan-success .msg { background:rgba(0,0,0,0.85); padding:20px 28px; border-radius:14px; text-align:center; }
+    #scan-success .msg h2 { color:#4CAF50; font-size:20px; margin-bottom:6px; }
   </style>
 </head>
 <body>
 
-<!-- Camera Video Background -->
 <video id="camera-video" autoplay playsinline muted></video>
+<canvas id="capture-canvas"></canvas>
+<img id="ref-image" crossorigin="anonymous">
 
-<!-- ===== SCREEN 1: LOADING ASSETS ===== -->
+<!-- SCREEN 1: LOADING -->
 <div id="screen-loading" class="screen active">
   <div class="progress-bar"><div class="seg current"></div><div class="seg"></div><div class="seg"></div><div class="seg"></div></div>
   <div style="text-align:center">
@@ -77,19 +61,19 @@
   </div>
 </div>
 
-<!-- ===== SCREEN 2: PICK UP DEVICE ===== -->
+<!-- SCREEN 2: PICK UP -->
 <div id="screen-pickup" class="screen">
   <div class="progress-bar"><div class="seg done"></div><div class="seg current"></div><div class="seg"></div><div class="seg"></div></div>
   <button class="back-btn" onclick="goScreen('screen-loading')">&#8592;</button>
   <h1>Pick Up Your Device</h1>
-  <p>Hold your device just like in the video below.</p>
+  <p>Hold your device steady and point at the model.</p>
   <div style="width:240px;height:160px;background:#222;border-radius:12px;margin:24px 0;display:flex;align-items:center;justify-content:center">
     <span style="font-size:48px">&#128241;</span>
   </div>
   <button class="btn btn-primary btn-bottom" onclick="goScreen('screen-camera-info')">Picked Up &#8594;</button>
 </div>
 
-<!-- ===== SCREEN 3: CAMERA INFO ===== -->
+<!-- SCREEN 3: CAMERA INFO -->
 <div id="screen-camera-info" class="screen">
   <div class="progress-bar"><div class="seg done"></div><div class="seg done"></div><div class="seg current"></div><div class="seg"></div></div>
   <button class="back-btn" onclick="goScreen('screen-pickup')">&#8592;</button>
@@ -99,62 +83,61 @@
   <button class="btn btn-primary btn-bottom" id="btn-next-camera" onclick="startCamera()">Next</button>
 </div>
 
-<!-- ===== SCREEN 4: OUTLINE GUIDE ===== -->
+<!-- SCREEN 4: OUTLINE -->
 <div id="screen-outline" class="screen">
   <div class="progress-bar"><div class="seg done"></div><div class="seg done"></div><div class="seg done"></div><div class="seg current"></div></div>
   <button class="back-btn" onclick="goScreen('screen-camera-info')">&#8592;</button>
   <h1 id="outline-title">Bring your heart in View</h1>
-  <img id="outline-img" src="" alt="Model Outline">
-  <p id="outline-desc">Please align the model in front of your camera to start tracking.</p>
-  <button class="btn btn-primary btn-bottom" onclick="startARTracking()">Start Scanning</button>
+  <img id="outline-img" src="" alt="Outline">
+  <p>Please align the model in front of your camera to start tracking.</p>
+  <button class="btn btn-primary btn-bottom" onclick="startScanning()">Start Scanning</button>
 </div>
 
-<!-- ===== AR OVERLAY (on top of Unity) ===== -->
-<div id="ar-overlay">
-  <div id="ar-title">Bring your heart in View</div>
-  <img id="ar-outline-overlay" src="" alt="Outline">
-  <div id="ar-status">Please align the model in front of your camera to start tracking.</div>
+<!-- AR SCAN OVERLAY -->
+<div id="ar-scan-overlay">
+  <div id="ar-scan-title">Bring your heart in View</div>
+  <img id="ar-scan-outline" src="" alt="Outline">
+  <div id="ar-scan-progress"><div id="ar-scan-progress-fill"></div></div>
+  <div id="ar-scan-status">Please align the model in front of your camera to start tracking.</div>
 </div>
 
-<!-- ===== SCAN SUCCESS MESSAGE ===== -->
+<!-- SUCCESS -->
 <div id="scan-success">
   <div class="msg">
     <h2>Brilliant!</h2>
-    <p>Let's learn more about it</p>
+    <p id="success-text">Let's learn more about it</p>
   </div>
 </div>
 
-<!-- ===== UNITY CONTAINER ===== -->
+<!-- UNITY -->
 <div id="unity-container">
   <canvas id="unity-canvas" tabindex="-1"></canvas>
 </div>
 
-<!-- ===== MINDAR.JS (Image Tracking) ===== -->
-<script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image.prod.js"></script>
+<!-- UNITY LOADER -->
+<script src="Build/QRWebApp.loader.js"></script>
 
-<!-- ===== MAIN SCRIPT ===== -->
 <script>
 // ============================================
-// CONFIGURATION — Change these for each model
+// CONFIG
 // ============================================
 var CONFIG = {
-  modelName: "heart",                    // Dynamic model name
-  outlineImage: "heartOutline.png",      // Outline image filename
-  targetFile: "targets.mind",            // MindAR compiled target
-  title: "Bring your heart in View",     // UI title
+  modelName: "heart",
+  outlineImage: "heartOutline.png",
+  title: "Bring your heart in View",
   successMsg: "Brilliant! Let's learn more about it",
-  arControllerObject: "ARController"     // Unity GameObject name
+  arControllerObject: "ARController",
+  matchThreshold: 0.55,
+  stableFrames: 30,
+  scanFPS: 20
 };
 
-// Load config from URL params (for dynamic models)
-// Usage: index.html?model=lungs&outline=lungsOutline.png&target=lungs.mind&title=Bring+your+lungs+in+View
-(function loadConfigFromURL() {
-  var params = new URLSearchParams(window.location.search);
-  if (params.get('model')) CONFIG.modelName = params.get('model');
-  if (params.get('outline')) CONFIG.outlineImage = params.get('outline');
-  if (params.get('target')) CONFIG.targetFile = params.get('target');
-  if (params.get('title')) CONFIG.title = params.get('title');
-  if (params.get('success')) CONFIG.successMsg = params.get('success');
+(function() {
+  var p = new URLSearchParams(window.location.search);
+  if (p.get('model')) CONFIG.modelName = p.get('model');
+  if (p.get('outline')) CONFIG.outlineImage = p.get('outline');
+  if (p.get('title')) CONFIG.title = p.get('title');
+  if (p.get('success')) CONFIG.successMsg = p.get('success');
 })();
 
 // ============================================
@@ -162,13 +145,13 @@ var CONFIG = {
 // ============================================
 var unityInstance = null;
 var cameraStream = null;
-var mindARController = null;
-var isTracked = false;
-var trackingStartTime = 0;
-var LOCK_DELAY = 2000; // 2 seconds stable tracking to lock
+var scanInterval = null;
+var matchCount = 0;
+var isLocked = false;
+var refImageData = null;
 
 // ============================================
-// SCREEN NAVIGATION
+// SCREENS
 // ============================================
 function goScreen(id) {
   document.querySelectorAll('.screen').forEach(function(s) { s.classList.remove('active'); });
@@ -179,48 +162,45 @@ function goScreen(id) {
 // ============================================
 // UNITY LOADER
 // ============================================
-function loadUnity() {
-  var script = document.createElement('script');
-  script.src = "QRWebApp.loader.js";
-  script.onload = function() {
-    createUnityInstance(document.querySelector("#unity-canvas"), {
-      dataUrl: "QRWebApp.data",
-      frameworkUrl: "QRWebApp.framework.js",
-      codeUrl: "QRWebApp.wasm",
-      streamingAssetsUrl: "StreamingAssets",
-      companyName: "Pynet",
-      productName: "QR_WEB_GL",
-      productVersion: "0.1.0",
-    }, function(progress) {
-      var pct = Math.round(progress * 100);
-      var el = document.getElementById('load-percent');
-      if (el) el.textContent = pct + '%';
-    }).then(function(instance) {
-      unityInstance = instance;
-      console.log('[WebXR] Unity loaded successfully');
-      onUnityLoaded();
-    }).catch(function(err) {
-      console.error('[WebXR] Unity load error:', err);
-      alert('Error loading: ' + err);
-    });
-  };
-  document.body.appendChild(script);
-}
+createUnityInstance(document.querySelector("#unity-canvas"), {
+  dataUrl: "Build/QRWebApp.data",
+  frameworkUrl: "Build/QRWebApp.framework.js",
+  codeUrl: "Build/QRWebApp.wasm",
+  streamingAssetsUrl: "StreamingAssets",
+  companyName: "Pynet",
+  productName: "QR_WEB_GL",
+  productVersion: "0.1.0",
+}, function(progress) {
+  var el = document.getElementById('load-percent');
+  if (el) el.textContent = Math.round(progress * 100) + '%';
+}).then(function(instance) {
+  unityInstance = instance;
+  onUnityLoaded();
+}).catch(function(err) {
+  console.error('Unity load error:', err);
+  document.getElementById('load-percent').textContent = 'Error: ' + err;
+});
 
 function onUnityLoaded() {
-  // Set outline images
   document.getElementById('outline-img').src = CONFIG.outlineImage;
-  document.getElementById('ar-outline-overlay').src = CONFIG.outlineImage;
+  document.getElementById('ar-scan-outline').src = CONFIG.outlineImage;
   document.getElementById('outline-title').textContent = CONFIG.title;
-  document.getElementById('ar-title').textContent = CONFIG.title;
+  document.getElementById('ar-scan-title').textContent = CONFIG.title;
+  document.getElementById('success-text').textContent = CONFIG.successMsg;
 
-  // Tell Unity which model to use
+  var refImg = document.getElementById('ref-image');
+  refImg.onload = function() {
+    var canvas = document.createElement('canvas');
+    canvas.width = 160;
+    canvas.height = 160;
+    var ctx = canvas.getContext('2d');
+    ctx.drawImage(refImg, 0, 0, 160, 160);
+    refImageData = ctx.getImageData(0, 0, 160, 160);
+  };
+  refImg.src = CONFIG.outlineImage;
+
   sendToUnity('SetModelName', CONFIG.modelName);
-
-  // Move to pickup screen
-  setTimeout(function() {
-    goScreen('screen-pickup');
-  }, 500);
+  setTimeout(function() { goScreen('screen-pickup'); }, 500);
 }
 
 // ============================================
@@ -232,148 +212,154 @@ function startCamera() {
   btn.disabled = true;
 
   navigator.mediaDevices.getUserMedia({
-    video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
+    video: { facingMode:'environment', width:{ideal:1280}, height:{ideal:720} }
   }).then(function(stream) {
     cameraStream = stream;
     var video = document.getElementById('camera-video');
     video.srcObject = stream;
     video.style.display = 'block';
     video.play();
-    console.log('[Camera] Started');
     goScreen('screen-outline');
   }).catch(function(err) {
-    console.error('[Camera] Error:', err);
-    alert('Camera access denied. Please allow camera permission.');
+    alert('Camera access denied. Please allow camera.');
     btn.textContent = 'Next';
     btn.disabled = false;
   });
 }
 
 // ============================================
-// AR TRACKING (MindAR)
+// IMAGE MATCHING
 // ============================================
-function startARTracking() {
-  // Hide onboarding, show Unity + AR overlay
+function startScanning() {
   document.querySelectorAll('.screen').forEach(function(s) { s.classList.remove('active'); });
   document.getElementById('unity-container').style.display = 'block';
-  document.getElementById('ar-overlay').classList.add('active');
+  document.getElementById('ar-scan-overlay').classList.add('active');
+  document.getElementById('ar-scan-progress').style.display = 'block';
 
-  // Tell Unity to prepare AR mode
   sendToUnity('OnARStarted', '');
-
-  // Initialize MindAR
-  initMindAR();
+  matchCount = 0;
+  isLocked = false;
+  scanInterval = setInterval(scanFrame, 1000 / CONFIG.scanFPS);
 }
 
-function initMindAR() {
-  try {
-    mindARController = new window.MINDAR.IMAGE.MindARThree({
-      container: document.getElementById('unity-container'),
-      imageTargetSrc: CONFIG.targetFile,
-      maxTrack: 1,
-      uiLoading: 'no',
-      uiScanning: 'no',
-      uiError: 'no',
-      filterMinCF: 0.001,
-      filterBeta: 10
-    });
+function scanFrame() {
+  if (isLocked) return;
+  var video = document.getElementById('camera-video');
+  if (video.readyState < 2) return;
 
-    // We don't use MindAR's renderer — we just need tracking data
-    mindARController.start().then(function() {
-      console.log('[MindAR] Started tracking');
+  var canvas = document.getElementById('capture-canvas');
+  canvas.width = 160;
+  canvas.height = 160;
+  var ctx = canvas.getContext('2d');
 
-      var anchor = mindARController.addAnchor(0);
+  var vw = video.videoWidth;
+  var vh = video.videoHeight;
+  var cropSize = Math.min(vw, vh) * 0.6;
+  var sx = (vw - cropSize) / 2;
+  var sy = (vh - cropSize) / 2;
+  ctx.drawImage(video, sx, sy, cropSize, cropSize, 0, 0, 160, 160);
 
-      anchor.onTargetFound = function() {
-        console.log('[MindAR] Target FOUND');
-        isTracked = true;
-        trackingStartTime = Date.now();
-        document.getElementById('ar-status').textContent = 'Tracking... hold steady!';
-        document.getElementById('ar-outline-overlay').style.opacity = '0.3';
-        sendToUnity('OnImageFound', '');
-      };
+  var frameData = ctx.getImageData(0, 0, 160, 160);
+  if (!refImageData) return;
 
-      anchor.onTargetUpdate = function() {
-        if (!isTracked) return;
+  var similarity = compareImages(frameData, refImageData);
 
-        // Get pose matrix from MindAR
-        var matrix = anchor.group.matrixWorld.elements;
-        var posX = matrix[12];
-        var posY = matrix[13];
-        var posZ = matrix[14];
-
-        // Send position to Unity
-        var data = posX + ',' + posY + ',' + posZ + ',0,0,0,1';
-        sendToUnity('OnImageTracked', data);
-
-        // Check if stable enough to lock
-        if (Date.now() - trackingStartTime > LOCK_DELAY) {
-          lockModel();
-        }
-      };
-
-      anchor.onTargetLost = function() {
-        console.log('[MindAR] Target LOST');
-        isTracked = false;
-        trackingStartTime = 0;
-        document.getElementById('ar-status').textContent = 'Please align the model in front of your camera to start tracking.';
-        document.getElementById('ar-outline-overlay').style.opacity = '0.5';
-        sendToUnity('OnImageLost', '');
-      };
-    }).catch(function(err) {
-      console.error('[MindAR] Start error:', err);
-      // Fallback: use simple camera mode without MindAR
-      fallbackCameraMode();
-    });
-  } catch(e) {
-    console.error('[MindAR] Init error:', e);
-    fallbackCameraMode();
+  if (similarity >= CONFIG.matchThreshold) {
+    matchCount++;
+    var progress = Math.min(matchCount / CONFIG.stableFrames, 1);
+    document.getElementById('ar-scan-progress-fill').style.width = (progress * 100) + '%';
+    document.getElementById('ar-scan-status').textContent = 'Tracking... hold steady! (' + Math.round(progress * 100) + '%)';
+    document.getElementById('ar-scan-outline').style.opacity = '0.2';
+    sendToUnity('OnImageFound', '');
+    if (matchCount >= CONFIG.stableFrames) lockModel();
+  } else {
+    matchCount = Math.max(0, matchCount - 2);
+    var progress = Math.min(matchCount / CONFIG.stableFrames, 1);
+    document.getElementById('ar-scan-progress-fill').style.width = (progress * 100) + '%';
+    document.getElementById('ar-scan-outline').style.opacity = '0.45';
+    if (matchCount === 0) {
+      document.getElementById('ar-scan-status').textContent = 'Please align the model in front of your camera.';
+    }
   }
 }
 
-// Fallback if MindAR fails — just use camera + tap to place
-function fallbackCameraMode() {
-  console.log('[Fallback] Using tap-to-place mode');
-  document.getElementById('ar-status').textContent = 'Tap screen to place the model';
-  document.getElementById('ar-overlay').addEventListener('click', function(e) {
-    // Normalize tap position
-    var x = (e.clientX / window.innerWidth) * 2 - 1;
-    var y = (e.clientY / window.innerHeight) * 2 - 1;
-    sendToUnity('OnTapToPlace', x + ',' + y);
-    lockModel();
-  }, { once: true });
-  // Make overlay clickable
-  document.getElementById('ar-overlay').style.pointerEvents = 'auto';
+function compareImages(imgA, imgB) {
+  var edgeScore = compareEdges(imgA, imgB);
+  var histScore = compareHistograms(imgA, imgB);
+  return edgeScore * 0.6 + histScore * 0.4;
+}
+
+function compareEdges(imgA, imgB) {
+  var edgesA = detectEdges(imgA);
+  var edgesB = detectEdges(imgB);
+  var match = 0;
+  var total = edgesA.length;
+  for (var i = 0; i < total; i++) {
+    if (Math.abs(edgesA[i] - edgesB[i]) < 30) match++;
+  }
+  return match / total;
+}
+
+function detectEdges(imgData) {
+  var w = imgData.width, h = imgData.height, d = imgData.data;
+  var edges = new Float32Array(w * h);
+  for (var y = 1; y < h - 1; y++) {
+    for (var x = 1; x < w - 1; x++) {
+      var idx = (y * w + x) * 4;
+      var gray = d[idx] * 0.299 + d[idx+1] * 0.587 + d[idx+2] * 0.114;
+      var grayL = d[((y) * w + (x-1)) * 4] * 0.299 + d[((y) * w + (x-1)) * 4+1] * 0.587 + d[((y) * w + (x-1)) * 4+2] * 0.114;
+      var grayR = d[((y) * w + (x+1)) * 4] * 0.299 + d[((y) * w + (x+1)) * 4+1] * 0.587 + d[((y) * w + (x+1)) * 4+2] * 0.114;
+      var grayU = d[((y-1) * w + x) * 4] * 0.299 + d[((y-1) * w + x) * 4+1] * 0.587 + d[((y-1) * w + x) * 4+2] * 0.114;
+      var grayD = d[((y+1) * w + x) * 4] * 0.299 + d[((y+1) * w + x) * 4+1] * 0.587 + d[((y+1) * w + x) * 4+2] * 0.114;
+      var gx = grayR - grayL;
+      var gy = grayD - grayU;
+      edges[y * w + x] = Math.sqrt(gx * gx + gy * gy);
+    }
+  }
+  return edges;
+}
+
+function compareHistograms(imgA, imgB) {
+  var histA = buildHistogram(imgA);
+  var histB = buildHistogram(imgB);
+  var intersection = 0, totalA = 0;
+  for (var i = 0; i < 64; i++) {
+    intersection += Math.min(histA[i], histB[i]);
+    totalA += histA[i];
+  }
+  return totalA > 0 ? intersection / totalA : 0;
+}
+
+function buildHistogram(imgData) {
+  var hist = new Float32Array(64);
+  var d = imgData.data;
+  var total = d.length / 4;
+  for (var i = 0; i < d.length; i += 4) {
+    var bin = ((d[i] >> 6) & 3) * 16 + ((d[i+1] >> 6) & 3) * 4 + ((d[i+2] >> 6) & 3);
+    hist[bin]++;
+  }
+  for (var j = 0; j < 64; j++) hist[j] /= total;
+  return hist;
 }
 
 // ============================================
-// LOCK MODEL
+// LOCK
 // ============================================
 function lockModel() {
-  if (!isTracked && !document.getElementById('ar-overlay').style.pointerEvents) return;
-
-  console.log('[AR] Model LOCKED');
-
-  // Hide outline overlay
-  document.getElementById('ar-overlay').classList.remove('active');
-
-  // Show success message
+  if (isLocked) return;
+  isLocked = true;
+  if (scanInterval) { clearInterval(scanInterval); scanInterval = null; }
+  document.getElementById('ar-scan-overlay').classList.remove('active');
   var success = document.getElementById('scan-success');
-  success.querySelector('p').textContent = CONFIG.successMsg;
   success.classList.add('active');
-
-  // Tell Unity to lock
+  setTimeout(function() { success.classList.remove('active'); }, 2500);
   sendToUnity('OnModelLocked', '');
-
-  // Hide success after 2.5 seconds
   setTimeout(function() {
-    success.classList.remove('active');
-  }, 2500);
-
-  // Stop MindAR (save resources)
-  if (mindARController) {
-    try { mindARController.stop(); } catch(e) {}
-  }
+    if (cameraStream) {
+      cameraStream.getTracks().forEach(function(t) { t.stop(); });
+    }
+    document.getElementById('camera-video').style.display = 'none';
+  }, 3000);
 }
 
 // ============================================
@@ -382,26 +368,8 @@ function lockModel() {
 function sendToUnity(method, data) {
   if (unityInstance) {
     unityInstance.SendMessage(CONFIG.arControllerObject, method, data);
-    console.log('[JS→Unity] ' + method + '(' + data + ')');
   }
 }
-
-// Called from Unity when model is fully loaded
-function onModelReady() {
-  console.log('[Unity→JS] Model ready');
-}
-
-// Called from Unity
-function onModelLocked() {
-  console.log('[Unity→JS] Model locked confirmed');
-}
-
-// ============================================
-// INIT
-// ============================================
-window.addEventListener('load', function() {
-  loadUnity();
-});
 </script>
 </body>
 </html>
