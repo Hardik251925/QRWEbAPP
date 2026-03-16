@@ -109,7 +109,7 @@
 <script>
 var CONFIG = {
   targetFile: "targets.mind",
-  stableFrames: 40,
+  stableFrames: 5,
   arControllerObject: "ARController"
 };
 
@@ -179,10 +179,10 @@ function startMindARDetection(video) {
     inputWidth: video.videoWidth || 640,
     inputHeight: video.videoHeight || 480,
     maxTrack: 1,
-    filterMinCF: 0.0001,
-    filterBeta: 1000,
-    missTolerance: 5,
-    warmupTolerance: 5,
+    filterMinCF: 0.00001,
+    filterBeta: 10000,
+    missTolerance: 20,
+    warmupTolerance: 0,
   });
 
   controller.addImageTargets(CONFIG.targetFile).then(function() {
@@ -221,7 +221,7 @@ function startMindARDetection(video) {
           return;
         }
       } else {
-        trackCount = Math.max(0, trackCount - 3);
+        trackCount = Math.max(0, trackCount - 1);
         var pct = Math.min(trackCount / CONFIG.stableFrames, 1);
         document.getElementById('ar-scan-progress-fill').style.width = (pct * 100) + '%';
         document.getElementById('ar-scan-outline').style.opacity = '0.5';
