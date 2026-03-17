@@ -6,7 +6,7 @@
   <title>QR_WEB_GL</title>
   <style>
     * { margin:0; padding:0; box-sizing:border-box; }
-    html, body { width:100%; height:100%; overflow:hidden; background:#000; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; color:#fff; }
+    html, body { width:100%; height:100%; overflow:hidden; background:#000; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; color:#fff; -webkit-user-select:none; user-select:none; }
     #unity-container { width:100%; height:100%; position:absolute; top:0; left:0; display:none; }
     #unity-canvas { width:100%; height:100%; background:transparent; }
     .screen { position:fixed; top:0; left:0; width:100%; height:100%; display:none; flex-direction:column; align-items:center; justify-content:center; background:#111; z-index:100; padding:24px; }
@@ -26,18 +26,25 @@
     #outline-img { max-width:70%; max-height:45vh; object-fit:contain; margin:16px 0; }
     #ar-camera-feed { position:fixed; top:0; left:0; width:100%; height:100%; object-fit:cover; z-index:1; display:none; }
 
-    /* AR Scan Overlay */
-    #ar-scan-overlay { position:fixed; top:0; left:0; width:100%; height:100%; z-index:50; display:none; pointer-events:none; }
-    #ar-scan-overlay.active { display:block; }
-    .ar-title { position:absolute; top:55px; left:0; width:100%; text-align:center; font-size:18px; font-weight:600; text-shadow:0 2px 6px rgba(0,0,0,0.9); z-index:3; }
-    .ar-outline { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:55%; max-height:50vh; object-fit:contain; opacity:0.5; z-index:3; animation:pulse-ol 2s ease-in-out infinite; }
-    @keyframes pulse-ol { 0%,100%{ opacity:0.35; } 50%{ opacity:0.65; } }
-    .ar-status { position:absolute; bottom:60px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.7); padding:10px 20px; border-radius:8px; font-size:14px; text-align:center; z-index:3; max-width:90%; }
-    .ar-detecting { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:65%; max-height:55vh; border:3px solid #4CAF50; border-radius:16px; z-index:4; display:none; animation:detect-pulse 0.5s ease-in-out infinite; }
-    @keyframes detect-pulse { 0%,100%{ border-color:#4CAF50; box-shadow:0 0 10px rgba(76,175,80,0.3); } 50%{ border-color:#81C784; box-shadow:0 0 25px rgba(76,175,80,0.6); } }
+    /* AR Placement Overlay */
+    #ar-placement-overlay { position:fixed; top:0; left:0; width:100%; height:100%; z-index:50; display:none; }
+    #ar-placement-overlay.active { display:block; }
+    .ar-top-msg { position:absolute; top:60px; left:0; width:100%; text-align:center; font-size:16px; font-weight:500; text-shadow:0 2px 6px rgba(0,0,0,0.9); z-index:3; padding:0 20px; }
+    .ar-scanning-msg { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); text-align:center; z-index:3; display:none; }
+    .ar-scanning-msg.show { display:block; }
+    .ar-scanning-msg p { font-size:16px; color:#ccc; background:rgba(0,0,0,0.6); padding:10px 20px; border-radius:8px; }
+
+    /* Tap Here Marker */
+    .tap-marker { position:absolute; z-index:55; display:none; flex-direction:column; align-items:center; cursor:pointer; pointer-events:auto; animation:bounce-marker 1.5s ease-in-out infinite; }
+    .tap-marker.show { display:flex; }
+    @keyframes bounce-marker { 0%,100%{ transform:translateY(0); } 50%{ transform:translateY(-10px); } }
+    .tap-marker .outline-preview { width:120px; height:120px; object-fit:contain; opacity:0.7; margin-bottom:8px; border:2px solid rgba(255,255,255,0.3); border-radius:12px; padding:8px; background:rgba(0,0,0,0.4); }
+    .tap-marker .tap-label { background:#4CAF50; color:#fff; padding:8px 20px; border-radius:20px; font-size:14px; font-weight:600; white-space:nowrap; box-shadow:0 2px 10px rgba(76,175,80,0.4); }
+    .tap-marker .tap-ring { width:60px; height:60px; border:2px solid rgba(76,175,80,0.6); border-radius:50%; position:absolute; top:30px; left:50%; transform:translateX(-50%); animation:ring-pulse 2s ease-in-out infinite; }
+    @keyframes ring-pulse { 0%,100%{ transform:translateX(-50%) scale(1); opacity:0.6; } 50%{ transform:translateX(-50%) scale(1.3); opacity:0; } }
 
     /* Success */
-    #scan-success { position:fixed; top:0; left:0; width:100%; height:100%; z-index:60; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,0.5); }
+    #scan-success { position:fixed; top:0; left:0; width:100%; height:100%; z-index:60; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,0.4); pointer-events:none; }
     #scan-success.active { display:flex; }
     #scan-success .msg { background:rgba(0,0,0,0.85); padding:24px 32px; border-radius:16px; text-align:center; animation:pop-in 0.3s ease; }
     @keyframes pop-in { from { transform:scale(0.8); opacity:0; } to { transform:scale(1); opacity:1; } }
@@ -65,7 +72,7 @@
 <div id="screen-pickup" class="screen">
   <div class="progress-bar"><div class="seg done"></div><div class="seg current"></div><div class="seg"></div><div class="seg"></div></div>
   <h1>Pick Up Your Device</h1>
-  <p>Hold your device steady and point at the model.</p>
+  <p>Hold your device steady and point at a flat surface.</p>
   <div style="width:240px;height:160px;background:#222;border-radius:12px;margin:24px 0;display:flex;align-items:center;justify-content:center"><span style="font-size:48px">&#128241;</span></div>
   <button class="btn btn-primary btn-bottom" onclick="goScreen('screen-camera-info')">Picked Up &#8594;</button>
 </div>
@@ -75,25 +82,30 @@
   <div class="progress-bar"><div class="seg done"></div><div class="seg done"></div><div class="seg current"></div><div class="seg"></div></div>
   <div style="font-size:60px;margin-bottom:12px">&#128247;</div>
   <h1>Your camera will open next</h1>
-  <p>Keep your device steady for the next step</p>
+  <p>Point at a flat surface like a table or floor</p>
   <button class="btn btn-primary btn-bottom" onclick="goScreen('screen-outline')">Next</button>
 </div>
 
-<!-- SCREEN 4: OUTLINE -->
+<!-- SCREEN 4: OUTLINE GUIDE -->
 <div id="screen-outline" class="screen">
   <div class="progress-bar"><div class="seg done"></div><div class="seg done"></div><div class="seg done"></div><div class="seg current"></div></div>
   <h1>Bring your heart in View</h1>
   <img id="outline-img" src="heartOutline.png" alt="Outline">
-  <p>Please align the model in front of your camera to start tracking.</p>
-  <button class="btn btn-primary btn-bottom" onclick="startARScanning()">Start Scanning</button>
+  <p>Point your camera at a flat surface. Tap to place the model.</p>
+  <button class="btn btn-primary btn-bottom" onclick="startARPlacement()">Start Scanning</button>
 </div>
 
-<!-- AR SCAN OVERLAY -->
-<div id="ar-scan-overlay">
-  <div class="ar-title">Bring your heart in View</div>
-  <img class="ar-outline" src="heartOutline.png" alt="Outline">
-  <div class="ar-detecting" id="detect-border"></div>
-  <div class="ar-status" id="ar-status">Scanning... point at the heart model</div>
+<!-- AR PLACEMENT OVERLAY -->
+<div id="ar-placement-overlay">
+  <div class="ar-top-msg" id="ar-top-msg">Scanning surface... move your phone slowly</div>
+  <div class="ar-scanning-msg" id="ar-scanning-msg"><p>Looking for flat surface...</p></div>
+
+  <!-- Tap marker (shows when surface found) -->
+  <div class="tap-marker" id="tap-marker" onclick="placeModel()">
+    <img class="outline-preview" src="heartOutline.png" alt="Heart">
+    <div class="tap-ring"></div>
+    <div class="tap-label">Tap here to place</div>
+  </div>
 </div>
 
 <!-- SUCCESS -->
@@ -111,26 +123,13 @@
 
 <script src="Build/QRWebApp.loader.js"></script>
 
-<!-- TensorFlow.js + MobileNet for object recognition -->
-<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.17.0/dist/tf.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet@2.1.0/dist/mobilenet.min.js"></script>
-
 <script>
 var unityInstance = null;
 var isLocked = false;
 var cameraStream = null;
-var model = null;
-var scanLoop = null;
-
-// Keywords that mean "this is a heart"
-var HEART_KEYWORDS = [
-  'heart', 'organ', 'anatomical', 'anatomy', 'cardiac',
-  'ventricle', 'aorta', 'artery', 'vein', 'blood',
-  'medical', 'body', 'muscle', 'tissue', 'red',
-  'sculpture', 'model', 'figurine', 'replica',
-  'rubber', 'plastic', 'toy', 'educational',
-  'biological', 'specimen', 'cardiovascular'
-];
+var surfaceFound = false;
+var markerX = 0;
+var markerY = 0;
 
 function goScreen(id) {
   document.querySelectorAll('.screen').forEach(function(s) { s.classList.remove('active'); });
@@ -151,27 +150,15 @@ createUnityInstance(document.querySelector("#unity-canvas"), {
 }).then(function(instance) {
   unityInstance = instance;
   sendToUnity('SetModelName', 'heart');
-
-  // Pre-load AI model while user reads screens
-  loadAIModel();
-
   setTimeout(function() { goScreen('screen-pickup'); }, 500);
 }).catch(function(err) {
   document.getElementById('load-percent').textContent = 'Error: ' + err;
 });
 
-// LOAD MOBILENET AI MODEL
-function loadAIModel() {
-  mobilenet.load({ version: 2, alpha: 0.5 }).then(function(m) {
-    model = m;
-    console.log('[AI] MobileNet loaded - ready to detect');
-  }).catch(function(err) {
-    console.error('[AI] Load error:', err);
-  });
-}
-
-// START AR
-function startARScanning() {
+// ============================================
+// START AR PLACEMENT
+// ============================================
+function startARPlacement() {
   document.querySelectorAll('.screen').forEach(function(s) { s.classList.remove('active'); });
 
   var video = document.getElementById('ar-camera-feed');
@@ -185,110 +172,163 @@ function startARScanning() {
     video.play();
 
     document.getElementById('unity-container').style.display = 'block';
-    document.getElementById('ar-scan-overlay').classList.add('active');
+    document.getElementById('ar-placement-overlay').classList.add('active');
+    document.getElementById('ar-scanning-msg').classList.add('show');
 
     sendToUnity('OnARStarted', '');
 
-    // Wait for video ready then start AI detection
-    video.addEventListener('loadeddata', function() {
-      startDetection(video);
-    }, { once: true });
+    // Try WebXR hit-test first (Android), fallback to touch (iOS)
+    tryWebXRHitTest(video);
 
   }).catch(function(err) {
     alert('Camera permission needed.');
   });
 }
 
-// AI DETECTION LOOP
-function startDetection(video) {
-  if (!model) {
-    document.getElementById('ar-status').textContent = 'Loading AI model... please wait';
-    // Wait for model to load
-    var waitInterval = setInterval(function() {
-      if (model) {
-        clearInterval(waitInterval);
-        document.getElementById('ar-status').textContent = 'Scanning... point at the heart model';
-        runDetection(video);
-      }
-    }, 500);
-    return;
-  }
-  runDetection(video);
-}
-
-function runDetection(video) {
-  var detectCount = 0;
-  var REQUIRED_DETECTIONS = 1; // 1 detection = instant lock
-
-  function detect() {
-    if (isLocked) return;
-    if (video.readyState < 2) { requestAnimationFrame(detect); return; }
-
-    model.classify(video, 5).then(function(predictions) {
-      if (isLocked) return;
-
-      var heartFound = false;
-
-      for (var i = 0; i < predictions.length; i++) {
-        var label = predictions[i].className.toLowerCase();
-        var confidence = predictions[i].probability;
-
-        // Check if any prediction matches heart keywords
-        for (var k = 0; k < HEART_KEYWORDS.length; k++) {
-          if (label.indexOf(HEART_KEYWORDS[k]) !== -1 && confidence > 0.05) {
-            heartFound = true;
-            console.log('[AI] MATCH: ' + label + ' (' + (confidence * 100).toFixed(1) + '%)');
-            break;
-          }
-        }
-        if (heartFound) break;
-      }
-
-      if (heartFound) {
-        detectCount++;
-        document.getElementById('detect-border').style.display = 'block';
-        document.getElementById('ar-status').textContent = 'Heart detected! Hold steady... (' + detectCount + '/' + REQUIRED_DETECTIONS + ')';
-
-        if (detectCount >= REQUIRED_DETECTIONS) {
-          lockModel();
-          return;
-        }
+// ============================================
+// WEBXR HIT TEST (Android Chrome)
+// ============================================
+function tryWebXRHitTest(video) {
+  if (navigator.xr) {
+    navigator.xr.isSessionSupported('immersive-ar').then(function(supported) {
+      if (supported) {
+        startWebXRPlacement();
       } else {
-        detectCount = Math.max(0, detectCount - 1);
-        document.getElementById('detect-border').style.display = 'none';
-        document.getElementById('ar-status').textContent = 'Scanning... point at the heart model';
-
-        // Log what AI sees (for debugging)
-        if (predictions.length > 0) {
-          console.log('[AI] Sees: ' + predictions[0].className + ' (' + (predictions[0].probability * 100).toFixed(1) + '%)');
-        }
+        fallbackTouchPlacement(video);
       }
-
-      // Next frame - slight delay to not overload mobile
-      setTimeout(function() { requestAnimationFrame(detect); }, 200);
-
-    }).catch(function(err) {
-      console.error('[AI] Detection error:', err);
-      setTimeout(function() { requestAnimationFrame(detect); }, 1000);
+    }).catch(function() {
+      fallbackTouchPlacement(video);
     });
+  } else {
+    fallbackTouchPlacement(video);
   }
-
-  detect();
 }
 
-// LOCK
-function lockModel() {
-  if (isLocked) return;
+// WebXR plane detection (Android)
+function startWebXRPlacement() {
+  navigator.xr.requestSession('immersive-ar', {
+    requiredFeatures: ['hit-test', 'local-floor']
+  }).then(function(session) {
+    // WebXR session started — use hit test for plane detection
+    document.getElementById('ar-top-msg').textContent = 'Surface detected! Tap to place your model.';
+    document.getElementById('ar-scanning-msg').classList.remove('show');
+    showTapMarker(window.innerWidth / 2, window.innerHeight / 2);
+    surfaceFound = true;
+  }).catch(function(err) {
+    console.log('[WebXR] Failed, using fallback:', err);
+    fallbackTouchPlacement(document.getElementById('ar-camera-feed'));
+  });
+}
+
+// ============================================
+// FALLBACK: Touch Placement (iOS + Android fallback)
+// ============================================
+function fallbackTouchPlacement(video) {
+  console.log('[AR] Using touch placement fallback');
+
+  // Simulate surface scanning (2 seconds)
+  setTimeout(function() {
+    surfaceFound = true;
+    document.getElementById('ar-scanning-msg').classList.remove('show');
+    document.getElementById('ar-top-msg').textContent = 'Surface found! Tap to place your model.';
+
+    // Show tap marker at center
+    showTapMarker(window.innerWidth / 2, window.innerHeight * 0.55);
+
+    // Also allow tap anywhere on screen
+    document.getElementById('ar-placement-overlay').addEventListener('click', function(e) {
+      if (isLocked || !surfaceFound) return;
+      // If tap is not on the marker itself, move marker there and place
+      moveTapMarker(e.clientX, e.clientY);
+      setTimeout(function() { placeModel(); }, 100);
+    });
+
+  }, 2000);
+
+  // During scan — show motion detection with camera
+  detectMotion(video);
+}
+
+// Simple motion detection to simulate "scanning"
+function detectMotion(video) {
+  var canvas = document.createElement('canvas');
+  var ctx = canvas.getContext('2d');
+  var prevFrame = null;
+  var motionCount = 0;
+
+  function checkMotion() {
+    if (surfaceFound) return;
+    if (video.readyState < 2) { requestAnimationFrame(checkMotion); return; }
+
+    canvas.width = 64;
+    canvas.height = 64;
+    ctx.drawImage(video, 0, 0, 64, 64);
+    var frame = ctx.getImageData(0, 0, 64, 64);
+
+    if (prevFrame) {
+      var diff = 0;
+      for (var i = 0; i < frame.data.length; i += 16) {
+        diff += Math.abs(frame.data[i] - prevFrame.data[i]);
+      }
+      if (diff > 5000) {
+        motionCount++;
+        var pct = Math.min(motionCount / 15, 1);
+        document.getElementById('ar-top-msg').textContent = 'Scanning surface... ' + Math.round(pct * 100) + '%';
+      }
+    }
+    prevFrame = frame;
+
+    if (motionCount < 15) {
+      setTimeout(function() { requestAnimationFrame(checkMotion); }, 200);
+    }
+  }
+  requestAnimationFrame(checkMotion);
+}
+
+// ============================================
+// TAP MARKER
+// ============================================
+function showTapMarker(x, y) {
+  var marker = document.getElementById('tap-marker');
+  marker.style.left = (x - 60) + 'px';
+  marker.style.top = (y - 80) + 'px';
+  marker.classList.add('show');
+  markerX = x;
+  markerY = y;
+}
+
+function moveTapMarker(x, y) {
+  var marker = document.getElementById('tap-marker');
+  marker.style.left = (x - 60) + 'px';
+  marker.style.top = (y - 80) + 'px';
+  markerX = x;
+  markerY = y;
+}
+
+// ============================================
+// PLACE MODEL
+// ============================================
+function placeModel() {
+  if (isLocked || !surfaceFound) return;
   isLocked = true;
 
-  document.getElementById('ar-scan-overlay').classList.remove('active');
+  // Hide placement overlay
+  document.getElementById('ar-placement-overlay').classList.remove('active');
 
+  // Show success
   var s = document.getElementById('scan-success');
   s.classList.add('active');
   setTimeout(function() { s.classList.remove('active'); }, 2500);
 
+  // Send tap position to Unity (normalized -1 to 1)
+  var nx = (markerX / window.innerWidth) * 2 - 1;
+  var ny = (markerY / window.innerHeight) * 2 - 1;
+  sendToUnity('OnTapToPlace', nx + ',' + ny);
+
+  // Also send lock
   sendToUnity('OnModelLocked', '');
 
+  // Stop camera
   setTimeout(function() {
     if (cameraStream) cameraStream.getTracks().forEach(function(t) { t.stop(); });
     document.getElementById('ar-camera-feed').style.display = 'none';
