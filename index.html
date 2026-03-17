@@ -24,37 +24,40 @@
     @keyframes spin { to { transform:rotate(360deg); } }
     #load-percent { font-size:20px; font-weight:700; color:#4A90D9; }
     #outline-img { max-width:70%; max-height:45vh; object-fit:contain; margin:16px 0; }
-
-    /* Camera feed — ALWAYS visible once started */
     #ar-camera-feed { position:fixed; top:0; left:0; width:100%; height:100%; object-fit:cover; z-index:1; display:none; }
 
-    /* AR overlay — sits on top of camera */
+    /* AR overlay */
     #ar-overlay { position:fixed; top:0; left:0; width:100%; height:100%; z-index:50; display:none; }
     #ar-overlay.active { display:block; }
 
-    /* Status message top */
-    #ar-status-bar { position:absolute; top:50px; left:0; width:100%; text-align:center; z-index:3; }
+    /* Status bar */
+    #ar-status-bar { position:absolute; top:50px; left:0; width:100%; text-align:center; z-index:10; }
     #ar-status-bar span { background:rgba(0,0,0,0.7); padding:8px 20px; border-radius:20px; font-size:14px; }
 
-    /* Scanning animation — dots moving on screen */
-    .scan-dots { position:absolute; top:0; left:0; width:100%; height:100%; z-index:2; pointer-events:none; overflow:hidden; }
-    .scan-dot { position:absolute; width:8px; height:8px; background:rgba(76,175,80,0.5); border-radius:50%; animation:float-dot 3s ease-in-out infinite; }
-    @keyframes float-dot { 0%{ transform:translateY(0) scale(1); opacity:0.5; } 50%{ transform:translateY(-20px) scale(1.5); opacity:1; } 100%{ transform:translateY(0) scale(1); opacity:0.5; } }
+    /* Dotted plane grid — shows on surface found */
+    #plane-grid { position:absolute; bottom:15%; left:50%; transform:translateX(-50%) perspective(400px) rotateX(55deg); width:280px; height:280px; display:none; z-index:3; pointer-events:none; }
+    #plane-grid.show { display:block; }
+    #plane-grid canvas { width:100%; height:100%; }
 
-    /* Tap marker + outline — HIDDEN by default, shows when surface found */
-    #tap-group { position:absolute; z-index:55; display:none; flex-direction:column; align-items:center; pointer-events:auto; cursor:pointer; }
+    /* Tap group — outline + tap here — on top of plane */
+    #tap-group { position:absolute; bottom:30%; left:50%; transform:translateX(-50%); z-index:5; display:none; flex-direction:column; align-items:center; pointer-events:auto; cursor:pointer; }
     #tap-group.show { display:flex; }
-    #tap-group .outline-preview { width:140px; height:140px; object-fit:contain; opacity:0.7; margin-bottom:10px; }
-    #tap-group .tap-circle { width:70px; height:70px; border:3px solid rgba(76,175,80,0.8); border-radius:50%; display:flex; align-items:center; justify-content:center; background:rgba(76,175,80,0.15); margin-bottom:8px; animation:tap-pulse 1.5s ease-in-out infinite; }
-    @keyframes tap-pulse { 0%,100%{ transform:scale(1); border-color:rgba(76,175,80,0.8); } 50%{ transform:scale(1.15); border-color:rgba(76,175,80,1); box-shadow:0 0 20px rgba(76,175,80,0.4); } }
-    #tap-group .tap-circle .plus { font-size:28px; color:#4CAF50; font-weight:300; }
-    #tap-group .tap-label { background:#4CAF50; color:#fff; padding:8px 24px; border-radius:20px; font-size:14px; font-weight:600; box-shadow:0 2px 10px rgba(76,175,80,0.4); }
+    #tap-group .outline-preview { width:150px; height:150px; object-fit:contain; opacity:0.75; margin-bottom:12px; filter:drop-shadow(0 0 8px rgba(255,255,255,0.3)); }
+    #tap-group .tap-btn { background:#4CAF50; color:#fff; padding:12px 32px; border-radius:24px; font-size:16px; font-weight:600; border:none; cursor:pointer; box-shadow:0 4px 15px rgba(76,175,80,0.5); animation:tap-glow 1.5s ease-in-out infinite; }
+    @keyframes tap-glow { 0%,100%{ box-shadow:0 4px 15px rgba(76,175,80,0.3); transform:scale(1); } 50%{ box-shadow:0 4px 25px rgba(76,175,80,0.7); transform:scale(1.05); } }
+
+    /* Scanning hand animation */
+    #scan-hand { position:absolute; bottom:20%; left:50%; transform:translateX(-50%); z-index:4; display:none; text-align:center; }
+    #scan-hand.show { display:block; }
+    #scan-hand .hand-icon { font-size:40px; animation:hand-move 2s ease-in-out infinite; }
+    @keyframes hand-move { 0%,100%{ transform:translateX(-30px); } 50%{ transform:translateX(30px); } }
+    #scan-hand p { font-size:13px; color:#ccc; margin-top:8px; background:rgba(0,0,0,0.5); padding:6px 14px; border-radius:8px; display:inline-block; }
 
     /* Success */
     #scan-success { position:fixed; top:0; left:0; width:100%; height:100%; z-index:60; display:none; align-items:center; justify-content:center; pointer-events:none; }
     #scan-success.active { display:flex; }
     #scan-success .msg { background:rgba(0,0,0,0.85); padding:24px 32px; border-radius:16px; text-align:center; animation:pop-in 0.3s ease; }
-    @keyframes pop-in { from { transform:scale(0.8); opacity:0; } to { transform:scale(1); opacity:1; } }
+    @keyframes pop-in { from{transform:scale(0.8);opacity:0}to{transform:scale(1);opacity:1} }
     #scan-success .msg h2 { color:#4CAF50; font-size:22px; margin-bottom:6px; }
     #scan-success .msg p { color:#ccc; }
   </style>
@@ -104,17 +107,23 @@
 
 <!-- AR OVERLAY -->
 <div id="ar-overlay">
-  <!-- Status bar -->
   <div id="ar-status-bar"><span id="ar-status-text">Scanning surface...</span></div>
 
-  <!-- Scanning dots (visual feedback) -->
-  <div class="scan-dots" id="scan-dots"></div>
+  <!-- Scanning hand (shows while scanning) -->
+  <div id="scan-hand" class="show">
+    <div class="hand-icon">&#128244;</div>
+    <p>Move your phone slowly over a surface</p>
+  </div>
 
-  <!-- Tap marker + outline (hidden until surface found) -->
+  <!-- Dotted plane grid (shows on surface found) -->
+  <div id="plane-grid">
+    <canvas id="plane-canvas" width="280" height="280"></canvas>
+  </div>
+
+  <!-- Tap here + outline (shows on surface found, on top of plane) -->
   <div id="tap-group" onclick="placeModel()">
     <img class="outline-preview" src="heartOutline.png" alt="Heart">
-    <div class="tap-circle"><span class="plus">+</span></div>
-    <div class="tap-label">Tap here to place</div>
+    <button class="tap-btn">Tap here to place</button>
   </div>
 </div>
 
@@ -141,24 +150,69 @@ var surfaceDetected = false;
 var scanRunning = false;
 var prevFrame = null;
 var stableCount = 0;
-var movingCount = 0;
+var planeAnimFrame = null;
 
 function goScreen(id) {
   document.querySelectorAll('.screen').forEach(function(s) { s.classList.remove('active'); });
   document.getElementById(id).classList.add('active');
 }
 
-// Create scanning dots
-function createScanDots() {
-  var container = document.getElementById('scan-dots');
-  for (var i = 0; i < 15; i++) {
-    var dot = document.createElement('div');
-    dot.className = 'scan-dot';
-    dot.style.left = (Math.random() * 90 + 5) + '%';
-    dot.style.top = (Math.random() * 80 + 10) + '%';
-    dot.style.animationDelay = (Math.random() * 3) + 's';
-    dot.style.animationDuration = (2 + Math.random() * 2) + 's';
-    container.appendChild(dot);
+// ============================================
+// DRAW DOTTED PLANE GRID
+// ============================================
+function drawPlaneGrid() {
+  var canvas = document.getElementById('plane-canvas');
+  var ctx = canvas.getContext('2d');
+  var w = canvas.width;
+  var h = canvas.height;
+  var time = Date.now() * 0.001;
+
+  ctx.clearRect(0, 0, w, h);
+
+  var spacing = 20;
+  var dotSize = 2;
+
+  for (var x = 0; x < w; x += spacing) {
+    for (var y = 0; y < h; y += spacing) {
+      // Distance from center
+      var dx = x - w/2;
+      var dy = y - h/2;
+      var dist = Math.sqrt(dx*dx + dy*dy);
+      var maxDist = Math.sqrt((w/2)*(w/2) + (h/2)*(h/2));
+
+      // Fade out towards edges
+      var alpha = 1 - (dist / maxDist);
+      alpha = Math.max(0, alpha * alpha);
+
+      // Pulse animation
+      var pulse = 0.5 + 0.5 * Math.sin(time * 2 + dist * 0.02);
+      alpha *= (0.3 + pulse * 0.7);
+
+      ctx.beginPath();
+      ctx.arc(x, y, dotSize, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(76, 175, 80, ' + (alpha * 0.8) + ')';
+      ctx.fill();
+    }
+  }
+
+  // Draw subtle grid lines
+  ctx.strokeStyle = 'rgba(76, 175, 80, 0.1)';
+  ctx.lineWidth = 0.5;
+  for (var x = 0; x < w; x += spacing) {
+    ctx.beginPath();
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x, h);
+    ctx.stroke();
+  }
+  for (var y = 0; y < h; y += spacing) {
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(w, y);
+    ctx.stroke();
+  }
+
+  if (!isLocked) {
+    planeAnimFrame = requestAnimationFrame(drawPlaneGrid);
   }
 }
 
@@ -197,14 +251,11 @@ function startAR() {
     video.style.display = 'block';
     video.play();
 
-    // Show Unity canvas (transparent) + AR overlay
     document.getElementById('unity-container').style.display = 'block';
     document.getElementById('ar-overlay').classList.add('active');
 
-    createScanDots();
     sendToUnity('OnARStarted', '');
 
-    // Start real surface detection
     video.addEventListener('loadeddata', function() {
       startSurfaceDetection(video);
     }, { once: true });
@@ -215,10 +266,7 @@ function startAR() {
 }
 
 // ============================================
-// REAL SURFACE DETECTION
-// Uses camera frame analysis:
-// - Stable frames (low motion) = surface found
-// - Moving frames (high motion) = still scanning, hide tap
+// SURFACE DETECTION
 // ============================================
 function startSurfaceDetection(video) {
   scanRunning = true;
@@ -226,6 +274,7 @@ function startSurfaceDetection(video) {
   var ctx = canvas.getContext('2d');
   prevFrame = null;
   stableCount = 0;
+  var movingCount = 0;
 
   function analyze() {
     if (!scanRunning || isLocked) return;
@@ -237,14 +286,11 @@ function startSurfaceDetection(video) {
     var frame = ctx.getImageData(0, 0, 80, 80);
 
     if (prevFrame) {
-      // Calculate motion between frames
       var totalDiff = 0;
       var edgeCount = 0;
       for (var i = 0; i < frame.data.length; i += 4) {
         var diff = Math.abs(frame.data[i] - prevFrame.data[i]);
         totalDiff += diff;
-
-        // Count edges (features on surface)
         if (i > 320 && i < frame.data.length - 320) {
           var dx = Math.abs(frame.data[i] - frame.data[i + 4]);
           var dy = Math.abs(frame.data[i] - frame.data[i + 320]);
@@ -253,22 +299,18 @@ function startSurfaceDetection(video) {
       }
 
       var avgMotion = totalDiff / (frame.data.length / 4);
-      var hasFeatures = edgeCount > 200;
+      var hasFeatures = edgeCount > 150;
 
-      if (avgMotion < 8 && hasFeatures) {
-        // STABLE + has surface features = SURFACE FOUND
+      if (avgMotion < 10 && hasFeatures) {
         stableCount++;
         movingCount = 0;
-
         if (stableCount >= 5 && !surfaceDetected) {
           onSurfaceFound();
         }
-      } else if (avgMotion > 15) {
-        // MOVING = camera is being moved, lose surface
+      } else if (avgMotion > 12) {
         movingCount++;
         stableCount = 0;
-
-        if (movingCount >= 3 && surfaceDetected) {
+        if (movingCount >= 4 && surfaceDetected) {
           onSurfaceLost();
         }
       }
@@ -282,57 +324,64 @@ function startSurfaceDetection(video) {
 }
 
 // ============================================
-// SURFACE FOUND — show tap here + outline
+// SURFACE FOUND
 // ============================================
 function onSurfaceFound() {
   surfaceDetected = true;
   document.getElementById('ar-status-text').textContent = 'Surface found! Tap to place your model.';
-  document.getElementById('scan-dots').style.display = 'none';
 
-  // Show tap marker at center of screen
-  var marker = document.getElementById('tap-group');
-  marker.style.left = (window.innerWidth / 2 - 70) + 'px';
-  marker.style.top = (window.innerHeight / 2 - 100) + 'px';
-  marker.classList.add('show');
+  // Hide scanning hand
+  document.getElementById('scan-hand').classList.remove('show');
+
+  // Show dotted plane grid
+  document.getElementById('plane-grid').classList.add('show');
+  drawPlaneGrid();
+
+  // Show tap here + outline
+  document.getElementById('tap-group').classList.add('show');
 }
 
 // ============================================
-// SURFACE LOST — hide tap here + outline, back to scanning
+// SURFACE LOST
 // ============================================
 function onSurfaceLost() {
   surfaceDetected = false;
   stableCount = 0;
   document.getElementById('ar-status-text').textContent = 'Scanning surface...';
-  document.getElementById('scan-dots').style.display = 'block';
 
-  // HIDE tap marker + outline
+  // Hide plane grid
+  document.getElementById('plane-grid').classList.remove('show');
+  if (planeAnimFrame) cancelAnimationFrame(planeAnimFrame);
+
+  // Hide tap here + outline
   document.getElementById('tap-group').classList.remove('show');
+
+  // Show scanning hand again
+  document.getElementById('scan-hand').classList.add('show');
 }
 
 // ============================================
-// PLACE MODEL — tap kiya
+// PLACE MODEL
 // ============================================
 function placeModel() {
   if (isLocked || !surfaceDetected) return;
   isLocked = true;
   scanRunning = false;
 
-  // Hide AR overlay (tap marker, outline, status — sab hide)
+  // Hide everything — plane, tap here, outline, status
   document.getElementById('ar-overlay').classList.remove('active');
+  if (planeAnimFrame) cancelAnimationFrame(planeAnimFrame);
 
   // Show success
   var s = document.getElementById('scan-success');
   s.classList.add('active');
   setTimeout(function() { s.classList.remove('active'); }, 2500);
 
-  // Send tap position to Unity
-  var nx = 0; // center
-  var ny = 0;
-  sendToUnity('OnTapToPlace', nx + ',' + ny);
+  // Tell Unity to spawn + lock
+  sendToUnity('OnTapToPlace', '0,0');
   sendToUnity('OnModelLocked', '');
 
-  // CAMERA STAYS ON — model shows on top of camera feed
-  // DO NOT stop camera — real world background stays visible
+  // Camera STAYS ON — real world visible behind model
 }
 
 function sendToUnity(method, data) {
