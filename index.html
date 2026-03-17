@@ -7,7 +7,7 @@
   <style>
     *{margin:0;padding:0;box-sizing:border-box}
     html,body{width:100%;height:100%;overflow:hidden;background:#000;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:#fff;-webkit-user-select:none;user-select:none}
-    #unity-container{width:100%;height:100%;position:absolute;top:0;left:0;display:none}
+    #unity-container{width:100%;height:100%;position:absolute;top:0;left:0;display:none;z-index:2}
     #unity-canvas{width:100%;height:100%;background:transparent}
     .screen{position:fixed;top:0;left:0;width:100%;height:100%;display:none;flex-direction:column;align-items:center;justify-content:center;background:#111;z-index:100;padding:24px}
     .screen.active{display:flex}
@@ -34,19 +34,14 @@
     #scan-hand .hand-icon{font-size:40px;animation:hand-move 2s ease-in-out infinite}
     @keyframes hand-move{0%,100%{transform:translateX(-30px)}50%{transform:translateX(30px)}}
     #scan-hand p{font-size:13px;color:#ccc;margin-top:8px;background:rgba(0,0,0,0.5);padding:6px 14px;border-radius:8px;display:inline-block}
-
-    /* Plane canvas — full screen, perspective transform */
-    #plane-container{position:absolute;bottom:5%;left:50%;transform:translateX(-50%) perspective(500px) rotateX(60deg);width:320px;height:320px;z-index:3;pointer-events:none;display:none}
+    #plane-container{position:absolute;bottom:0;left:50%;transform:translateX(-50%) perspective(400px) rotateX(65deg);width:100vw;height:60vh;z-index:3;pointer-events:none;display:none;transform-origin:bottom center}
     #plane-container.show{display:block}
     #plane-canvas{width:100%;height:100%}
-
-    /* Tap group — on top of plane */
-    #tap-group{position:absolute;bottom:32%;left:50%;transform:translateX(-50%);z-index:5;display:none;flex-direction:column;align-items:center;pointer-events:auto;cursor:pointer}
+    #tap-group{position:absolute;bottom:35%;left:50%;transform:translateX(-50%);z-index:5;display:none;flex-direction:column;align-items:center;pointer-events:auto;cursor:pointer}
     #tap-group.show{display:flex}
-    #tap-group .outline-preview{width:140px;height:140px;object-fit:contain;opacity:0.75;margin-bottom:12px;filter:drop-shadow(0 0 8px rgba(255,255,255,0.3))}
+    #tap-group .outline-preview{width:150px;height:150px;object-fit:contain;opacity:0.75;margin-bottom:12px;filter:drop-shadow(0 0 8px rgba(255,255,255,0.3))}
     #tap-group .tap-btn{background:#4CAF50;color:#fff;padding:12px 32px;border-radius:24px;font-size:16px;font-weight:600;border:none;cursor:pointer;box-shadow:0 4px 15px rgba(76,175,80,0.5);animation:tap-glow 1.5s ease-in-out infinite}
     @keyframes tap-glow{0%,100%{box-shadow:0 4px 15px rgba(76,175,80,0.3);transform:scale(1)}50%{box-shadow:0 4px 25px rgba(76,175,80,0.7);transform:scale(1.05)}}
-
     #scan-success{position:fixed;top:0;left:0;width:100%;height:100%;z-index:60;display:none;align-items:center;justify-content:center;pointer-events:none}
     #scan-success.active{display:flex}
     #scan-success .msg{background:rgba(0,0,0,0.85);padding:24px 32px;border-radius:16px;text-align:center;animation:pop-in .3s ease}
@@ -58,17 +53,13 @@
 <body>
 <video id="ar-camera-feed" autoplay playsinline muted></video>
 
-<!-- SCREEN 1 -->
 <div id="screen-loading" class="screen active">
   <div class="progress-bar"><div class="seg current"></div><div class="seg"></div><div class="seg"></div><div class="seg"></div></div>
-  <div style="text-align:center">
-    <div style="font-size:60px;margin-bottom:8px">&#x2764;&#xFE0F;</div>
-    <h1>Loading Experience</h1><p>Preparing your AR experience</p>
-    <div class="loader-circle"></div><div id="load-percent">0%</div>
-  </div>
+  <div style="text-align:center"><div style="font-size:60px;margin-bottom:8px">&#x2764;&#xFE0F;</div>
+  <h1>Loading Experience</h1><p>Preparing your AR experience</p>
+  <div class="loader-circle"></div><div id="load-percent">0%</div></div>
 </div>
 
-<!-- SCREEN 2 -->
 <div id="screen-pickup" class="screen">
   <div class="progress-bar"><div class="seg done"></div><div class="seg current"></div><div class="seg"></div><div class="seg"></div></div>
   <h1>Pick Up Your Device</h1><p>Hold your device steady and point at a flat surface.</p>
@@ -76,7 +67,6 @@
   <button class="btn btn-primary btn-bottom" onclick="goScreen('screen-camera-info')">Picked Up &#8594;</button>
 </div>
 
-<!-- SCREEN 3 -->
 <div id="screen-camera-info" class="screen">
   <div class="progress-bar"><div class="seg done"></div><div class="seg done"></div><div class="seg current"></div><div class="seg"></div></div>
   <div style="font-size:60px;margin-bottom:12px">&#128247;</div>
@@ -84,91 +74,62 @@
   <button class="btn btn-primary btn-bottom" onclick="goScreen('screen-outline')">Next</button>
 </div>
 
-<!-- SCREEN 4 -->
 <div id="screen-outline" class="screen">
   <div class="progress-bar"><div class="seg done"></div><div class="seg done"></div><div class="seg done"></div><div class="seg current"></div></div>
-  <h1>Bring your heart in View</h1>
-  <img id="outline-img" src="heartOutline.png" alt="Outline">
+  <h1>Bring your heart in View</h1><img id="outline-img" src="heartOutline.png" alt="Outline">
   <p>Point your camera at a flat surface. Tap to place the model.</p>
   <button class="btn btn-primary btn-bottom" onclick="startAR()">Start Scanning</button>
 </div>
 
-<!-- AR OVERLAY -->
 <div id="ar-overlay">
   <div id="ar-status-bar"><span id="ar-status-text">Scanning surface...</span></div>
   <div id="scan-hand" class="show"><div class="hand-icon">&#128244;</div><p>Move your phone slowly over a surface</p></div>
-  <div id="plane-container"><canvas id="plane-canvas" width="320" height="320"></canvas></div>
+  <div id="plane-container"><canvas id="plane-canvas"></canvas></div>
   <div id="tap-group" onclick="placeModel()">
     <img class="outline-preview" src="heartOutline.png" alt="Heart">
     <button class="tap-btn">Tap here to place</button>
   </div>
 </div>
 
-<!-- SUCCESS -->
 <div id="scan-success"><div class="msg"><h2>Brilliant!</h2><p>Let's learn more about it</p></div></div>
-
-<!-- UNITY -->
 <div id="unity-container"><canvas id="unity-canvas" tabindex="-1"></canvas></div>
 
 <script src="Build/QRWebApp.loader.js"></script>
 <script>
 var unityInstance=null,isLocked=false,cameraStream=null,surfaceDetected=false,scanRunning=false;
-var prevFrame=null,stableCount=0,planeAnimId=null,planeGrowth=0,PLANE_READY=1;
+var prevFrame=null,stableCount=0,planeAnimId=null,planeGrowth=0;
 
 function goScreen(id){document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('active')});document.getElementById(id).classList.add('active')}
 
-// PLANE DRAWING
+function initPlaneCanvas(){
+  var c=document.getElementById('plane-canvas');
+  c.width=window.innerWidth;
+  c.height=Math.round(window.innerHeight*0.6);
+}
+
 function drawPlane(){
   var c=document.getElementById('plane-canvas'),ctx=c.getContext('2d'),w=c.width,h=c.height,t=Date.now()*0.001;
   ctx.clearRect(0,0,w,h);
-  var spacing=22,dotR=2.2;
-  var visibleRadius=(w/2)*planeGrowth;
+  var spacing=24,dotR=2.5,visR=(Math.max(w,h)/2)*planeGrowth;
 
   for(var x=0;x<w;x+=spacing){
     for(var y=0;y<h;y+=spacing){
-      var dx=x-w/2,dy=y-h/2;
-      var dist=Math.sqrt(dx*dx+dy*dy);
-      if(dist>visibleRadius) continue;
-
-      var edgeFade=1-Math.max(0,(dist-visibleRadius+40)/40);
-      var pulse=0.5+0.5*Math.sin(t*2+dist*0.03);
-      var alpha=edgeFade*edgeFade*(0.3+pulse*0.5);
-
-      ctx.beginPath();
-      ctx.arc(x,y,dotR,0,Math.PI*2);
-      ctx.fillStyle='rgba(76,175,80,'+alpha+')';
-      ctx.fill();
+      var dx=x-w/2,dy=y-h/2,dist=Math.sqrt(dx*dx+dy*dy);
+      if(dist>visR) continue;
+      var fade=1-Math.max(0,(dist-visR+50)/50);
+      var pulse=0.5+0.5*Math.sin(t*2+dist*0.02);
+      var alpha=fade*fade*(0.3+pulse*0.5);
+      ctx.beginPath();ctx.arc(x,y,dotR,0,Math.PI*2);
+      ctx.fillStyle='rgba(76,175,80,'+alpha+')';ctx.fill();
     }
   }
-
-  // Grid lines within visible area
-  ctx.strokeStyle='rgba(76,175,80,'+(0.08*planeGrowth)+')';
-  ctx.lineWidth=0.5;
-  for(var x=0;x<w;x+=spacing){
-    for(var y=0;y<h;y+=spacing){
-      var dx=x-w/2,dy=y-h/2;
-      if(Math.sqrt(dx*dx+dy*dy)>visibleRadius) continue;
-      // horizontal
-      if(x+spacing<w){
-        var dx2=(x+spacing)-w/2;
-        if(Math.sqrt(dx2*dx2+dy*dy)<=visibleRadius){
-          ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+spacing,y);ctx.stroke();
-        }
-      }
-      // vertical
-      if(y+spacing<h){
-        var dy2=(y+spacing)-h/2;
-        if(Math.sqrt(dx*dx+dy2*dy2)<=visibleRadius){
-          ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x,y+spacing);ctx.stroke();
-        }
-      }
-    }
-  }
+  ctx.strokeStyle='rgba(76,175,80,'+(0.1*planeGrowth)+')';ctx.lineWidth=0.5;
+  for(var x=0;x<w;x+=spacing){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,h);ctx.stroke()}
+  for(var y=0;y<h;y+=spacing){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(w,y);ctx.stroke()}
 
   if(!isLocked) planeAnimId=requestAnimationFrame(drawPlane);
 }
 
-// UNITY LOAD
 createUnityInstance(document.querySelector("#unity-canvas"),{
   dataUrl:"Build/QRWebApp.data",frameworkUrl:"Build/QRWebApp.framework.js",
   codeUrl:"Build/QRWebApp.wasm",streamingAssetsUrl:"StreamingAssets",
@@ -177,7 +138,6 @@ createUnityInstance(document.querySelector("#unity-canvas"),{
 }).then(function(i){unityInstance=i;sendToUnity('SetModelName','heart');setTimeout(function(){goScreen('screen-pickup')},500)
 }).catch(function(e){document.getElementById('load-percent').textContent='Error: '+e});
 
-// START AR
 function startAR(){
   document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('active')});
   var video=document.getElementById('ar-camera-feed');
@@ -186,12 +146,12 @@ function startAR(){
     cameraStream=stream;video.srcObject=stream;video.style.display='block';video.play();
     document.getElementById('unity-container').style.display='block';
     document.getElementById('ar-overlay').classList.add('active');
+    initPlaneCanvas();
     sendToUnity('OnARStarted','');
     video.addEventListener('loadeddata',function(){startSurfaceDetection(video)},{once:true});
   }).catch(function(){alert('Camera permission needed.')});
 }
 
-// SURFACE DETECTION
 function startSurfaceDetection(video){
   scanRunning=true;
   var canvas=document.createElement('canvas'),ctx=canvas.getContext('2d');
@@ -200,52 +160,32 @@ function startSurfaceDetection(video){
   function analyze(){
     if(!scanRunning||isLocked) return;
     if(video.readyState<2){requestAnimationFrame(analyze);return}
-
-    canvas.width=80;canvas.height=80;
-    ctx.drawImage(video,0,0,80,80);
+    canvas.width=80;canvas.height=80;ctx.drawImage(video,0,0,80,80);
     var frame=ctx.getImageData(0,0,80,80);
-
     if(prevFrame){
       var totalDiff=0,edgeCount=0;
       for(var i=0;i<frame.data.length;i+=4){
-        var diff=Math.abs(frame.data[i]-prevFrame.data[i]);
-        totalDiff+=diff;
+        totalDiff+=Math.abs(frame.data[i]-prevFrame.data[i]);
         if(i>320&&i<frame.data.length-320){
           var dx=Math.abs(frame.data[i]-frame.data[i+4]);
           var dy=Math.abs(frame.data[i]-frame.data[i+320]);
           if(dx+dy>30) edgeCount++;
         }
       }
-      var avgMotion=totalDiff/(frame.data.length/4);
-      var hasFeatures=edgeCount>150;
+      var avgMotion=totalDiff/(frame.data.length/4),hasFeatures=edgeCount>150;
 
       if(avgMotion<10&&hasFeatures){
-        // STABLE — grow plane
-        stableCount++;
-        movingCount=0;
-
-        if(stableCount>=2&&!surfaceDetected){
-          // Start showing plane — begin growing
-          onPlaneGrowing();
-        }
-        if(surfaceDetected&&planeGrowth<PLANE_READY){
-          // Grow plane
-          planeGrowth=Math.min(PLANE_READY,planeGrowth+0.08);
-          if(planeGrowth>=PLANE_READY){
-            onSurfaceReady();
-          }
+        stableCount++;movingCount=0;
+        if(stableCount>=2&&!surfaceDetected) onPlaneGrowing();
+        if(surfaceDetected&&planeGrowth<1){
+          planeGrowth=Math.min(1,planeGrowth+0.06);
+          if(planeGrowth>=1) onSurfaceReady();
         }
       } else if(avgMotion>12){
-        // MOVING — shrink/hide plane
-        movingCount++;
-        stableCount=0;
-        if(movingCount>=3){
-          if(surfaceDetected){
-            planeGrowth=Math.max(0,planeGrowth-0.15);
-            if(planeGrowth<=0.05){
-              onSurfaceLost();
-            }
-          }
+        movingCount++;stableCount=0;
+        if(movingCount>=3&&surfaceDetected){
+          planeGrowth=Math.max(0,planeGrowth-0.12);
+          if(planeGrowth<=0.05) onSurfaceLost();
         }
       }
     }
@@ -255,31 +195,22 @@ function startSurfaceDetection(video){
   requestAnimationFrame(analyze);
 }
 
-// PLANE STARTING TO GROW (dots appearing)
 function onPlaneGrowing(){
-  surfaceDetected=true;
-  planeGrowth=0.05;
+  surfaceDetected=true;planeGrowth=0.05;
   document.getElementById('ar-status-text').textContent='Detecting surface...';
   document.getElementById('scan-hand').classList.remove('show');
   document.getElementById('plane-container').classList.add('show');
-
-  // Hide tap group — not ready yet
   document.getElementById('tap-group').classList.remove('show');
-
   drawPlane();
 }
 
-// PLANE FULLY GROWN — surface ready
 function onSurfaceReady(){
   document.getElementById('ar-status-text').textContent='Surface found! Tap to place your model.';
   document.getElementById('tap-group').classList.add('show');
 }
 
-// SURFACE LOST — camera moved
 function onSurfaceLost(){
-  surfaceDetected=false;
-  stableCount=0;
-  planeGrowth=0;
+  surfaceDetected=false;stableCount=0;planeGrowth=0;
   document.getElementById('ar-status-text').textContent='Scanning surface...';
   document.getElementById('plane-container').classList.remove('show');
   document.getElementById('tap-group').classList.remove('show');
@@ -287,15 +218,24 @@ function onSurfaceLost(){
   if(planeAnimId) cancelAnimationFrame(planeAnimId);
 }
 
-// PLACE MODEL
 function placeModel(){
-  if(isLocked||planeGrowth<PLANE_READY) return;
+  if(isLocked||planeGrowth<1) return;
   isLocked=true;scanRunning=false;
+
+  // Hide AR overlay
   document.getElementById('ar-overlay').classList.remove('active');
   if(planeAnimId) cancelAnimationFrame(planeAnimId);
+
+  // Show success
   var s=document.getElementById('scan-success');
   s.classList.add('active');
   setTimeout(function(){s.classList.remove('active')},2500);
+
+  // Camera feed STAYS visible — Unity canvas transparent — model renders on top
+  document.getElementById('unity-canvas').style.background='transparent';
+  document.getElementById('unity-container').style.zIndex='2';
+
+  // Tell Unity
   sendToUnity('OnTapToPlace','0,0');
   sendToUnity('OnModelLocked','');
 }
