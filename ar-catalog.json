@@ -9,34 +9,13 @@
       "id": "demo-heart",
       "name": "Heart AR Demo",
       "description": "Scan heart image to see 3D heart model",
-      "targetMind": "assets/targets/heart.mind",
-      "targetPreview": "assets/targets/heart-preview.jpg",
-      "model": "assets/models/heart.glb",
+      "targetMind": "assets/targets/heart_ai.mind",
+      "targetPreview": "assets/targets/heart_ai.png",
+      "model": "assets/models/heart_ai.glb",
       "scale": 0.3,
       "rotationX": 0,
       "category": "medical"
-    },
-    {
-      "id": "demo-car",
-      "name": "Car AR Demo",
-      "description": "Scan car image to see 3D car model",
-      "targetMind": "assets/targets/car.mind",
-      "targetPreview": "assets/targets/car-preview.jpg",
-      "model": "assets/models/car.glb",
-      "scale": 0.5,
-      "rotationX": 0,
-      "category": "vehicles"
-    },
-    {
-      "id": "demo-robot",
-      "name": "Robot AR Demo",
-      "description": "Scan robot image to see 3D robot",
-      "targetMind": "assets/targets/robot.mind",
-      "targetPreview": "assets/targets/robot-preview.jpg",
-      "model": "assets/models/robot.glb",
-      "scale": 0.4,
-      "rotationX": 0,
-      "category": "tech"
     }
+    
   ]
 }
