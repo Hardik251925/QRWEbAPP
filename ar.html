@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>AR Viewer</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      overflow: hidden; background: #000;
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      touch-action: none; -webkit-user-select: none; user-select: none;
+    }
+
+    #ar-container { width: 100vw; height: 100vh; position: relative; }
+
+    /* Loading */
+    .loading {
+      position: fixed; inset: 0; z-index: 100;
+      background: #000; color: #fff;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      transition: opacity 0.5s;
+    }
+    .loading.hidden { opacity: 0; pointer-events: none; }
+    .spinner {
+      width: 44px; height: 44px;
+      border: 3px solid rgba(255,255,255,0.15);
+      border-top-color: #fff; border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading p { margin-top: 16px; font-size: 14px; opacity: 0.7; }
+    .loading .progress-bar {
+      width: 200px; height: 3px; background: rgba(255,255,255,0.1);
+      border-radius: 2px; margin-top: 12px; overflow: hidden;
+    }
+    .loading .progress-fill {
+      height: 100%; background: #00cc66; width: 0%;
+      border-radius: 2px; transition: width 0.3s;
+    }
+
+    /* AR UI */
+    .back-btn {
+      position: fixed; top: 16px; left: 16px;
+      width: 40px; height: 40px; border-radius: 50%;
+      background: rgba(0,0,0,0.55); border: none;
+      color: #fff; font-size: 20px; cursor: pointer;
+      z-index: 50; backdrop-filter: blur(8px);
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    .ar-title {
+      position: fixed; top: 18px; left: 50%; transform: translateX(-50%);
+      background: rgba(0,0,0,0.55); color: #fff;
+      padding: 6px 18px; border-radius: 20px;
+      font-size: 13px; font-weight: 600; z-index: 50;
+      backdrop-filter: blur(8px);
+      max-width: 60%; white-space: nowrap;
+      overflow: hidden; text-overflow: ellipsis;
+    }
+
+    .hint {
+      position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%);
+      background: rgba(0,0,0,0.75); color: #fff;
+      padding: 10px 22px; border-radius: 24px;
+      font-size: 13px; z-index: 50; text-align: center;
+      backdrop-filter: blur(8px);
+      transition: all 0.3s;
+      pointer-events: none;
+      max-width: 90%;
+    }
+    .hint.success { background: rgba(0,180,60,0.8); }
+
+    .scan-line {
+      position: fixed; left: 8%; right: 8%;
+      height: 2px; z-index: 10; display: none;
+      background: linear-gradient(90deg, transparent, #00ff88, transparent);
+      animation: scanAnim 2.5s ease-in-out infinite;
+      pointer-events: none;
+    }
+    @keyframes scanAnim { 0%,100% { top: 25%; } 50% { top: 75%; } }
+
+    /* Plane AR UI */
+    .crosshair {
+      position: fixed; top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 44px; height: 44px; z-index: 10;
+      display: none; pointer-events: none;
+    }
+    .crosshair::before, .crosshair::after {
+      content: ''; position: absolute;
+      background: rgba(255,255,255,0.65); border-radius: 1px;
+    }
+    .crosshair::before { width: 1.5px; height: 100%; left: 50%; }
+    .crosshair::after { width: 100%; height: 1.5px; top: 50%; }
+
+    .place-btn {
+      position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%);
+      width: 68px; height: 68px; border-radius: 50%;
+      background: #fff; border: 4px solid rgba(255,255,255,0.35);
+      cursor: pointer; z-index: 50; display: none;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.35);
+    }
+    .place-btn::after {
+      content: '+'; position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 30px; font-weight: 300; color: #000;
+    }
+
+    .reset-btn {
+      position: fixed; bottom: 36px; right: 16px;
+      padding: 10px 18px; border: none; border-radius: 24px;
+      background: rgba(255,60,60,0.55); color: #fff;
+      font-size: 12px; font-weight: 600; cursor: pointer;
+      z-index: 50; display: none;
+      backdrop-filter: blur(8px);
+    }
+
+    /* Toast */
+    .toast {
+      position: fixed; top: 50%; left: 50%;
+      transform: translate(-50%, -50%) scale(0.8);
+      background: rgba(0,200,80,0.9); color: #fff;
+      padding: 14px 30px; border-radius: 14px;
+      font-size: 16px; font-weight: 600;
+      z-index: 200; opacity: 0;
+      transition: all 0.3s;
+      pointer-events: none;
+    }
+    .toast.show {
+      opacity: 1; transform: translate(-50%, -50%) scale(1);
+    }
+
+    /* Error */
+    .error-screen {
+      position: fixed; inset: 0; z-index: 300;
+      background: #0a0a1a; color: #fff;
+      display: none; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 20px; text-align: center;
+    }
+    .error-screen.show { display: flex; }
+    .error-screen h2 { font-size: 20px; margin-bottom: 8px; }
+    .error-screen p { font-size: 14px; color: rgba(255,255,255,0.5); margin-bottom: 20px; }
+    .error-screen button {
+      padding: 12px 28px; border-radius: 12px;
+      background: #fff; color: #000; border: none;
+      font-size: 14px; font-weight: 600; cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Loading -->
+  <div class="loading" id="loading">
+    <div class="spinner"></div>
+    <p id="loadingText">Starting AR...</p>
+    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+  </div>
+
+  <!-- AR Container -->
+  <div id="ar-container">
+    <button class="back-btn" onclick="window.location.href='index.html'">&#8592;</button>
+    <div class="ar-title" id="arTitle">AR Experience</div>
+    <div class="scan-line" id="scanLine"></div>
+    <div class="crosshair" id="crosshair"></div>
+    <div class="hint" id="hint">Initializing...</div>
+    <button class="place-btn" id="placeBtn"></button>
+    <button class="reset-btn" id="resetBtn">Reset</button>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast">3D Model Loaded!</div>
+
+  <!-- Error -->
+  <div class="error-screen" id="errorScreen">
+    <h2>Oops!</h2>
+    <p id="errorText">Something went wrong</p>
+    <button onclick="window.location.href='index.html'">Go Back</button>
+  </div>
+
+  <!-- Scripts -->
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://unpkg.com/three@0.164.1/build/three.module.js",
+      "three/addons/": "https://unpkg.com/three@0.164.1/examples/jsm/",
+      "mindar-image-three": "https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-three.prod.js"
+    }
+  }
+  </script>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+    import { MindARThree } from 'mindar-image-three';
+
+    // ============================================================
+    //  READ URL PARAMETERS (dynamic — no hardcoding)
+    // ============================================================
+    const params = new URLSearchParams(window.location.search);
+    const MODE = params.get('mode') || 'image';        // 'image' or 'plane'
+    const MODEL_PATH = params.get('model') || '';       // GLB file path
+    const TARGET_PATH = params.get('target') || '';     // .mind file path
+    const SCALE = parseFloat(params.get('scale')) || 0.3;
+    const ROT_X = parseFloat(params.get('rotX')) || 0;
+    const NAME = params.get('name') || 'AR Experience';
+
+    // Set title
+    document.getElementById('arTitle').textContent = NAME;
+
+    // Validate
+    if (!MODEL_PATH) {
+      showError('No 3D model specified. Go back and select an experience.');
+    }
+    if (MODE === 'image' && !TARGET_PATH) {
+      showError('No target image specified for Image Scan mode.');
+    }
+
+    // ============================================================
+    //  UTILITIES
+    // ============================================================
+    function showError(msg) {
+      document.getElementById('errorText').textContent = msg;
+      document.getElementById('errorScreen').classList.add('show');
+      document.getElementById('loading').classList.add('hidden');
+    }
+
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 1500);
+    }
+
+    function setProgress(pct) {
+      document.getElementById('progressFill').style.width = pct + '%';
+    }
+
+    function setHint(text, success) {
+      const h = document.getElementById('hint');
+      h.textContent = text;
+      h.classList.toggle('success', !!success);
+    }
+
+    // ============================================================
+    //  GLB LOADER
+    // ============================================================
+    async function loadModel(url) {
+      const loader = new GLTFLoader();
+      return new Promise((resolve, reject) => {
+        loader.load(
+          url,
+          (gltf) => {
+            const model = gltf.scene;
+            const anims = gltf.animations;
+
+            // Auto-fit scale
+            const box = new THREE.Box3().setFromObject(model);
+            const size = box.getSize(new THREE.Vector3());
+            const maxDim = Math.max(size.x, size.y, size.z);
+            const s = SCALE / maxDim;
+            model.scale.setScalar(s);
+
+            // Center
+            const center = box.getCenter(new THREE.Vector3());
+            model.position.sub(center.multiplyScalar(s));
+
+            // Rotation fix
+            if (ROT_X !== 0) model.rotation.x = THREE.MathUtils.degToRad(ROT_X);
+
+            // Shadows
+            model.traverse(c => {
+              if (c.isMesh) { c.castShadow = true; c.receiveShadow = true; }
+            });
+
+            resolve({ model, anims });
+          },
+          (xhr) => {
+            if (xhr.total > 0) {
+              const pct = Math.round((xhr.loaded / xhr.total) * 100);
+              document.getElementById('loadingText').textContent = `Loading 3D model... ${pct}%`;
+              setProgress(pct);
+            }
+          },
+          (err) => reject(new Error('Failed to load model: ' + url))
+        );
+      });
+    }
+
+    // ============================================================
+    //  IMAGE SCAN AR (MindAR — iOS + Android)
+    // ============================================================
+    async function startImageAR() {
+      document.getElementById('loadingText').textContent = 'Loading Image Tracking...';
+      setProgress(30);
+
+      const container = document.getElementById('ar-container');
+
+      const mindarThree = new MindARThree({
+        container,
+        imageTargetSrc: TARGET_PATH,
+        maxTrack: 1,
+        uiLoading: 'no',
+        uiScanning: 'no',
+        filterMinCF: 0.0001,
+        filterBeta: 1000,
+        missTolerance: 5,
+        warmupTolerance: 5,
+      });
+
+      const { renderer, scene, camera } = mindarThree;
+
+      // Lighting
+      scene.add(new THREE.AmbientLight(0xffffff, 0.85));
+      const dl = new THREE.DirectionalLight(0xffffff, 0.6);
+      dl.position.set(5, 10, 7);
+      scene.add(dl);
+
+      setProgress(50);
+
+      // Anchor
+      const anchor = mindarThree.addAnchor(0);
+
+      // Load model
+      document.getElementById('loadingText').textContent = 'Loading 3D model...';
+      const { model, anims } = await loadModel(MODEL_PATH);
+      anchor.group.add(model);
+
+      setProgress(80);
+
+      // Animations
+      let mixer = null;
+      if (anims && anims.length > 0) {
+        mixer = new THREE.AnimationMixer(model);
+        anims.forEach(clip => mixer.clipAction(clip).play());
+      }
+
+      // Events
+      anchor.onTargetFound = () => {
+        document.getElementById('scanLine').style.display = 'none';
+        setHint('3D Model Active! Move around to explore', true);
+        showToast('Target Found!');
+        if (navigator.vibrate) navigator.vibrate(100);
+      };
+
+      anchor.onTargetLost = () => {
+        document.getElementById('scanLine').style.display = 'block';
+        setHint('Point camera at target image...');
+      };
+
+      // Start
+      document.getElementById('loadingText').textContent = 'Starting camera...';
+      setProgress(90);
+      await mindarThree.start();
+      setProgress(100);
+
+      // UI
+      document.getElementById('scanLine').style.display = 'block';
+      setHint('Point camera at target image...');
+      document.getElementById('loading').classList.add('hidden');
+
+      // Render
+      const clock = new THREE.Clock();
+      renderer.setAnimationLoop(() => {
+        if (mixer) mixer.update(clock.getDelta());
+        renderer.render(scene, camera);
+      });
+    }
+
+    // ============================================================
+    //  PLANE AR — Camera + Gyro + Tap to Place (iOS + Android)
+    // ============================================================
+    async function startPlaneAR() {
+      document.getElementById('loadingText').textContent = 'Starting camera...';
+      setProgress(20);
+
+      const container = document.getElementById('ar-container');
+
+      // Video feed
+      const video = document.createElement('video');
+      video.setAttribute('playsinline', '');
+      video.setAttribute('autoplay', '');
+      video.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;z-index:0;';
+      container.insertBefore(video, container.firstChild);
+
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } },
+        audio: false,
+      });
+      video.srcObject = stream;
+      await video.play();
+
+      setProgress(40);
+
+      // Three.js overlay
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(60, innerWidth / innerHeight, 0.01, 100);
+      camera.position.set(0, 1.6, 0);
+
+      const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+      renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+      renderer.setSize(innerWidth, innerHeight);
+      renderer.domElement.style.cssText = 'position:absolute;top:0;left:0;z-index:1;pointer-events:none;';
+      container.appendChild(renderer.domElement);
+
+      // Light
+      scene.add(new THREE.AmbientLight(0xffffff, 0.85));
+      const dl = new THREE.DirectionalLight(0xffffff, 0.7);
+      dl.position.set(3, 10, 5);
+      scene.add(dl);
+
+      // Grid
+      const grid = new THREE.GridHelper(20, 40, 0x00ff88, 0x003311);
+      grid.material.opacity = 0.08;
+      grid.material.transparent = true;
+      scene.add(grid);
+
+      setProgress(60);
+
+      // Load model
+      document.getElementById('loadingText').textContent = 'Loading 3D model...';
+      const modelData = await loadModel(MODEL_PATH);
+      const placed = [];
+
+      setProgress(80);
+
+      // Gyroscope
+      let gyro = { alpha: 0, beta: 90, gamma: 0 };
+      let hasGyro = false;
+
+      if (typeof DeviceOrientationEvent !== 'undefined' &&
+          typeof DeviceOrientationEvent.requestPermission === 'function') {
+        try {
+          const p = await DeviceOrientationEvent.requestPermission();
+          if (p === 'granted') hasGyro = true;
+        } catch(e) {}
+      } else if ('DeviceOrientationEvent' in window) {
+        hasGyro = true;
+      }
+
+      if (hasGyro) {
+        window.addEventListener('deviceorientation', e => {
+          if (e.alpha !== null) gyro = { alpha: e.alpha, beta: e.beta, gamma: e.gamma };
+        }, true);
+      }
+
+      setProgress(100);
+
+      // UI
+      document.getElementById('crosshair').style.display = 'block';
+      document.getElementById('placeBtn').style.display = 'block';
+      document.getElementById('resetBtn').style.display = 'block';
+      setHint('Move phone around, tap + to place model');
+      document.getElementById('loading').classList.add('hidden');
+
+      // Place
+      document.getElementById('placeBtn').onclick = () => {
+        const clone = modelData.model.clone();
+        const dir = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
+        const pos = camera.position.clone().add(dir.multiplyScalar(2));
+        pos.y = 0;
+        clone.position.copy(pos);
+        clone.lookAt(camera.position.x, 0, camera.position.z);
+        scene.add(clone);
+        placed.push(clone);
+
+        if (modelData.anims && modelData.anims.length > 0) {
+          const m = new THREE.AnimationMixer(clone);
+          modelData.anims.forEach(c => m.clipAction(c).play());
+          clone.userData.mixer = m;
+        }
+
+        showToast('Model Placed!');
+        if (navigator.vibrate) navigator.vibrate(50);
+        setHint(`${placed.length} model(s) placed. Tap + for more!`);
+      };
+
+      // Reset
+      document.getElementById('resetBtn').onclick = () => {
+        placed.forEach(m => scene.remove(m));
+        placed.length = 0;
+        setHint('Move phone around, tap + to place model');
+      };
+
+      // Render
+      const clock = new THREE.Clock();
+      (function animate() {
+        requestAnimationFrame(animate);
+        if (hasGyro) {
+          const e = new THREE.Euler(
+            THREE.MathUtils.degToRad(gyro.beta - 90),
+            THREE.MathUtils.degToRad(gyro.alpha),
+            THREE.MathUtils.degToRad(-gyro.gamma), 'YXZ'
+          );
+          camera.quaternion.setFromEuler(e);
+        }
+        const d = clock.getDelta();
+        placed.forEach(m => { if (m.userData.mixer) m.userData.mixer.update(d); });
+        renderer.render(scene, camera);
+      })();
+    }
+
+    // ============================================================
+    //  START
+    // ============================================================
+    (async () => {
+      try {
+        if (MODE === 'image') await startImageAR();
+        else if (MODE === 'plane') await startPlaneAR();
+        else showError('Unknown AR mode: ' + MODE);
+      } catch (err) {
+        console.error(err);
+        showError(err.message || 'AR initialization failed');
+      }
+    })();
+  </script>
+</body>
+</html>
