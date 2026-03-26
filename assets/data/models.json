@@ -1,1 +1,37 @@
-
+{
+    "models": [
+        {
+            "id": "heart",
+            "name": "Huaman",
+            "category": "NA",
+            "emoji": "🔬",
+            "glb": "assets/models/heart.glb",
+            "usdz": "assets/models/heart.usdz",
+            "cameraOrbit": "30deg 75deg 2.5m",
+            "description": "",
+            "tags": [],
+            "videos": [
+                {
+                    "title": "",
+                    "duration": "",
+                    "emoji": "🎬",
+                    "url": "assets/videos/WhatsApp Video 2026-03-24 at 11.46.37 AM.mp4"
+                }
+            ],
+            "audio": [
+                {
+                    "title": "",
+                    "url": "assets/audio/ai_speech_5min.mp3",
+                    "duration": ""
+                }
+            ],
+            "infoSections": [],
+            "images": [
+                {
+                    "src": "assets/images/WhatsApp Image 2026-03-22 at 8.33.04 PM.jpeg",
+                    "label": ""
+                }
+            ]
+        }
+    ]
+}
