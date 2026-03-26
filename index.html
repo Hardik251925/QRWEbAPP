@@ -218,16 +218,16 @@
         <!-- Model Selector -->
         <div class="model-grid">
             <div class="model-card active" onclick="switchModel(0, this)">
+                <span class="emoji">❤️</span>
+                <span class="name">Heart</span>
+            </div>
+            <div class="model-card" onclick="switchModel(1, this)">
                 <span class="emoji">🧑‍🚀</span>
                 <span class="name">Astronaut</span>
             </div>
-            <div class="model-card" onclick="switchModel(1, this)">
+            <div class="model-card" onclick="switchModel(2, this)">
                 <span class="emoji">🪑</span>
                 <span class="name">Chair</span>
-            </div>
-            <div class="model-card" onclick="switchModel(2, this)">
-                <span class="emoji">🚀</span>
-                <span class="name">Rocket</span>
             </div>
         </div>
 
@@ -235,8 +235,8 @@
         <div class="viewer-card">
             <model-viewer
                 id="viewer"
-                src="https://modelviewer.dev/shared-assets/models/Astronaut.glb"
-                ios-src="https://modelviewer.dev/shared-assets/models/Astronaut.usdz"
+                src="assets/model/heart.glb"
+                ios-src="assets/model/heart.usdz"
                 alt="3D Model"
                 ar
                 ar-modes="scene-viewer quick-look"
@@ -338,15 +338,15 @@
         // Model data
         const models = [
             {
+                glb: 'assets/model/heart.glb',
+                usdz: 'assets/model/heart.usdz',
+            },
+            {
                 glb: 'https://modelviewer.dev/shared-assets/models/Astronaut.glb',
                 usdz: 'https://modelviewer.dev/shared-assets/models/Astronaut.usdz',
             },
             {
                 glb: 'https://modelviewer.dev/shared-assets/models/Chair.glb',
-                usdz: null, // auto-generated USDZ
-            },
-            {
-                glb: 'https://modelviewer.dev/shared-assets/models/RocketShip.glb',
                 usdz: null,
             }
         ];
