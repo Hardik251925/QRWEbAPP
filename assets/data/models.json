@@ -4,7 +4,7 @@
             "id": "model_mn7fl6oh",
             "name": "New Model",
             "category": "",
-            "emoji": "ÃÂÃÂ°ÃÂÃÂÃÂÃÂÃÂÃÂ¬",
+            "emoji": "ÃÂÃÂÃÂÃÂ°ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¬",
             "glb": "",
             "usdz": "",
             "cameraOrbit": "30deg 75deg 2.5m",
@@ -19,7 +19,7 @@
             "id": "heart",
             "name": "Huaman",
             "category": "NA",
-            "emoji": "ÃÂ°ÃÂÃÂÃÂ¬NA",
+            "emoji": "ÃÂÃÂ°ÃÂÃÂÃÂÃÂÃÂÃÂ¬NA",
             "glb": "assets/models/heart.glb",
             "usdz": "assets/models/heart.usdz",
             "cameraOrbit": "30deg 75deg 2.5m",
@@ -41,7 +41,7 @@
             "id": "lungs",
             "name": "Huaman",
             "category": "NA",
-            "emoji": "ð¬NA",
+            "emoji": "Ã°ÂÂÂ¬NA",
             "glb": "",
             "usdz": "",
             "cameraOrbit": "30deg 75deg 2.5m",
@@ -53,7 +53,7 @@
                 {
                     "title": "Video",
                     "duration": "",
-                    "emoji": "ð¬NA",
+                    "emoji": "Ã°ÂÂÂ¬NA",
                     "url": ""
                 }
             ],
@@ -85,7 +85,7 @@
             "id": "brain",
             "name": "Huaman",
             "category": "NA",
-            "emoji": "🔬NA",
+            "emoji": "ð¬NA",
             "glb": "",
             "usdz": "",
             "cameraOrbit": "30deg 75deg 2.5m",
@@ -97,7 +97,7 @@
                 {
                     "title": "dfgfdg",
                     "duration": "",
-                    "emoji": "🎬ghfg",
+                    "emoji": "ð¬ghfg",
                     "url": ""
                 }
             ],
@@ -117,6 +117,46 @@
                 {
                     "src": "assets/images/WhatsApp Image 2026-03-22 at 8.33.12 PM.jpeg",
                     "label": "vfbghghnj"
+                }
+            ]
+        },
+        {
+            "id": "hardik",
+            "name": "human",
+            "category": "Bio",
+            "emoji": "🔬NA",
+            "glb": "assets/models/heart.glb",
+            "usdz": "assets/models/heart.usdz",
+            "cameraOrbit": "30deg 75deg 2.5m",
+            "description": "dkfhdsjkfhsdjkh",
+            "tags": [
+                "#bio"
+            ],
+            "videos": [
+                {
+                    "title": "Video",
+                    "duration": "",
+                    "emoji": "🎬NA",
+                    "url": "assets/videos/MicrosoftTeams-video.mp4"
+                }
+            ],
+            "audio": [
+                {
+                    "title": "Audio",
+                    "url": "assets/audio/ai_speech_5min.mp3",
+                    "duration": ""
+                }
+            ],
+            "infoSections": [
+                {
+                    "title": "hghj",
+                    "text": "ghfghgf"
+                }
+            ],
+            "images": [
+                {
+                    "src": "assets/images/WhatsApp Image 2026-03-22 at 8.33.04 PM.jpeg",
+                    "label": "hty"
                 }
             ]
         }
