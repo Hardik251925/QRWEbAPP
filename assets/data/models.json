@@ -1,0 +1,14 @@
+{
+  "models": [
+    {
+      "id": "heart",       
+      "name": "Human Heart",  
+      "glb": "assets/models/heart.usdz", 
+      "usdz": "assets/models/heart.glb",
+      "hotspots": [...],
+      "videos": [...],
+      "images": [...],
+      "infoSections": [...]
+    }
+  ]
+}
