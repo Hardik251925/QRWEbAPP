@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#0a0a10">
+    <!-- FORCE NO CACHE — har baar fresh load hoga -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>AR Medical Viewer</title>
     <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/4.0.0/model-viewer.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -211,7 +215,10 @@ function onReady(){
     }
     document.getElementById('start-screen').classList.add('active');
 }
-async function ft(u,t){const c=new AbortController;const tm=setTimeout(()=>c.abort(),t);try{const r=await fetch(u,{signal:c.signal});clearTimeout(tm);if(!r.ok)throw new Error('HTTP '+r.status);return await r.json()}catch(e){clearTimeout(tm);if(e.name==='AbortError')throw new Error('Timeout '+t+'ms');throw e}}
+async function ft(u,t){const c=new AbortController;const tm=setTimeout(()=>c.abort(),t);try{
+    // Cache bust: add timestamp to URL so browser never uses cached response
+    const bustUrl = u + (u.includes('?') ? '&' : '?') + '_t=' + Date.now();
+    const r=await fetch(bustUrl,{signal:c.signal,cache:'no-store'});clearTimeout(tm);if(!r.ok)throw new Error('HTTP '+r.status);return await r.json()}catch(e){clearTimeout(tm);if(e.name==='AbortError')throw new Error('Timeout '+t+'ms');throw e}}
 function pm(d){let m=Array.isArray(d)?d:(d&&Array.isArray(d.models))?d.models:(d&&d.id)?[d]:[];return m.filter(x=>{if(!x.id||!x.name||!x.glb){console.warn('[AR] Invalid model:',x);return false}x.category=x.category||'';x.emoji=x.emoji||'🔬';x.usdz=x.usdz||null;x.cameraOrbit=x.cameraOrbit||'30deg 75deg 2.5m';x.description=x.description||'';x.tags=x.tags||[];x.hotspots=x.hotspots||[];x.videos=x.videos||[];x.infoSections=x.infoSections||[];x.images=x.images||[];return true})}
 function onReady(){if(!MODELS.length){sE('JSON mein koi valid model nahi.\nHar model mein "id","name","glb" zaroori hai.');return}hL();document.getElementById('start-screen').classList.add('active')}
 function sL(a,b){const o=document.getElementById('lo');o.classList.remove('hidden');document.getElementById('lt').textContent=a;document.getElementById('ls').textContent=b||''}
@@ -238,31 +245,48 @@ function lbPrev(){lbIndex=(lbIndex-1+lbImages.length)%lbImages.length;renderLb()
 function switchSection(s){currentSection=s;document.querySelectorAll('.section').forEach(x=>x.classList.remove('active'));document.getElementById('section-'+s).classList.add('active');document.querySelectorAll('.nav-item').forEach(x=>x.classList.remove('active'));document.getElementById('nav-'+s).classList.add('active');const t={ar:'AR View',video:'Video',info:'Information',image:'Images'};document.getElementById('top-title').textContent=t[s];const p=document.getElementById('mode-pill');p.className='mode-pill '+s;p.textContent=s.toUpperCase()}
 viewer.addEventListener('click',e=>{if(!e.target.classList.contains('hotspot')&&!e.target.classList.contains('dot')&&!e.target.closest('.info-popup'))closePopup()});
 
-// ── URL CHANGE DETECTION ──
-// Jab user dusra QR scan kare aur URL change ho (?heart → ?lungs)
-// toh page auto reload hoga aur naya data fetch karega
+// ══════════════════════════════════════════════
+// FORCE FRESH LOAD ON EVERY PAGE VISIT
+// ══════════════════════════════════════════════
+// Problem: Phone pe QR scan karte ho toh browser cache se 
+// purana page dikhata hai instead of fresh load.
 //
-// 3 cases handle karta hai:
-// 1. Browser back/forward button
-// 2. Same tab mein naya QR scan (URL change)
-// 3. Tab focus pe check (mobile browser background se aaye)
+// Solution:
+// 1. pageshow event — jab page cache (bfcache) se aaye toh force reload
+// 2. sessionStorage — last loaded model id store karo, 
+//    agar URL ka id alag hai toh reload
+// 3. No-cache headers + cache-bust fetch URLs
 
-const initialURL = location.href;
-
-// Case 1: Browser history navigation
-window.addEventListener('popstate', () => { location.reload(); });
-
-// Case 2 & 3: Check URL periodically + on tab focus
-function checkURLChange() {
-    if (location.href !== initialURL) {
+// Case 1: Page from bfcache (back/forward navigation)
+window.addEventListener('pageshow', function(e) {
+    if (e.persisted) {
+        // Page came from cache — force full reload
         location.reload();
     }
-}
-setInterval(checkURLChange, 1000);
-document.addEventListener('visibilitychange', () => {
-    if (!document.hidden) checkURLChange();
 });
-window.addEventListener('focus', checkURLChange);
+
+// Case 2: Check if QR model changed since last load
+const currentQR = getQRModelName();
+const lastQR = sessionStorage.getItem('ar_last_qr') || '';
+if (currentQR && lastQR && currentQR !== lastQR) {
+    // Different QR scanned — force reload to fetch fresh data
+    sessionStorage.setItem('ar_last_qr', currentQR);
+    location.reload();
+} else if (currentQR) {
+    sessionStorage.setItem('ar_last_qr', currentQR);
+}
+
+// Case 3: When tab becomes visible again, check if URL changed
+document.addEventListener('visibilitychange', function() {
+    if (!document.hidden) {
+        const nowQR = getQRModelName();
+        const storedQR = sessionStorage.getItem('ar_last_qr') || '';
+        if (nowQR && storedQR && nowQR !== storedQR) {
+            sessionStorage.setItem('ar_last_qr', nowQR);
+            location.reload();
+        }
+    }
+});
 
 initApp();
 </script>
