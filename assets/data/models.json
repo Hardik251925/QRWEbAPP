@@ -1,14 +1,69 @@
 {
   "models": [
     {
-      "id": "heart",       
-      "name": "Human Heart",  
-      "glb": "assets/models/heart.usdz", 
-      "usdz": "assets/models/heart.glb",
-      "hotspots": [...],
-      "videos": [...],
-      "images": [...],
-      "infoSections": [...]
+      "id": "heart",
+      "name": "Human Heart",
+      "category": "Cardiology",
+      "emoji": "❤️",
+      "glb": "assets/models/heart.glb",
+      "usdz": "assets/models/heart.usdz",
+      "cameraOrbit": "30deg 75deg 2.5m",
+      "description": "A detailed 3D model of the human heart showing all four chambers, major arteries, and veins.",
+      "tags": [ "Anatomy", "Cardiology", "Education" ],
+      "hotspots": [
+        {
+          "position": "0.0 0.08 0.04",
+          "normal": "0 1 0",
+          "label": "Left Ventricle",
+          "info": "The left ventricle pumps oxygenated blood to the entire body through the aorta."
+        },
+        {
+          "position": "0.03 0.1 -0.02",
+          "normal": "0.5 0.5 0.5",
+          "label": "Right Atrium",
+          "info": "The right atrium receives deoxygenated blood from the body through the vena cava."
+        },
+        {
+          "position": "-0.02 0.14 0.01",
+          "normal": "0 1 0",
+          "label": "Aorta",
+          "info": "The aorta is the largest artery. It carries oxygenated blood to the rest of the body."
+        }
+      ],
+      "videos": [
+        {
+          "title": "How the Heart Pumps Blood",
+          "duration": "3:45",
+          "emoji": "🫀",
+          "url": ""
+        },
+        {
+          "title": "Heart Anatomy Overview",
+          "duration": "5:20",
+          "emoji": "📖",
+          "url": ""
+        }
+      ],
+      "infoSections": [
+        {
+          "title": "Overview",
+          "text": "The human heart is a muscular organ about the size of a fist. It beats approximately 100,000 times per day."
+        },
+        {
+          "title": "Chambers",
+          "text": "The heart has 4 chambers: Right Atrium, Right Ventricle, Left Atrium, and Left Ventricle."
+        },
+        {
+          "title": "Blood Flow",
+          "text": "Body to Vena Cava to Right Atrium to Right Ventricle to Lungs to Left Atrium to Left Ventricle to Aorta to Body."
+        }
+      ],
+      "images": [
+        {
+          "src": "assets/images/heart-front.jpg",
+          "label": "Heart Front View"
+        }
+      ]
     }
   ]
 }
