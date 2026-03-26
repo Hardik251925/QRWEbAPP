@@ -202,9 +202,12 @@ function onReady(){
         return;
     }
     
-    // ── No QR match: show start screen normally ──
+    // ── No QR match: show error or start screen ──
     if(qrModelKey){
         console.warn('[AR] QR key "' + qrModelKey + '" not found in models');
+        sL('Model Not Found', '');
+        sE('Model "' + qrModelKey + '" not found in data.\n\nAvailable models: ' + MODELS.map(m=>m.id).join(', ') + '\n\nCheck if models.json has this id.');
+        return;
     }
     document.getElementById('start-screen').classList.add('active');
 }
@@ -234,6 +237,33 @@ function lbNext(){lbIndex=(lbIndex+1)%lbImages.length;renderLb()}
 function lbPrev(){lbIndex=(lbIndex-1+lbImages.length)%lbImages.length;renderLb()}
 function switchSection(s){currentSection=s;document.querySelectorAll('.section').forEach(x=>x.classList.remove('active'));document.getElementById('section-'+s).classList.add('active');document.querySelectorAll('.nav-item').forEach(x=>x.classList.remove('active'));document.getElementById('nav-'+s).classList.add('active');const t={ar:'AR View',video:'Video',info:'Information',image:'Images'};document.getElementById('top-title').textContent=t[s];const p=document.getElementById('mode-pill');p.className='mode-pill '+s;p.textContent=s.toUpperCase()}
 viewer.addEventListener('click',e=>{if(!e.target.classList.contains('hotspot')&&!e.target.classList.contains('dot')&&!e.target.closest('.info-popup'))closePopup()});
+
+// ── URL CHANGE DETECTION ──
+// Jab user dusra QR scan kare aur URL change ho (?heart → ?lungs)
+// toh page auto reload hoga aur naya data fetch karega
+//
+// 3 cases handle karta hai:
+// 1. Browser back/forward button
+// 2. Same tab mein naya QR scan (URL change)
+// 3. Tab focus pe check (mobile browser background se aaye)
+
+const initialURL = location.href;
+
+// Case 1: Browser history navigation
+window.addEventListener('popstate', () => { location.reload(); });
+
+// Case 2 & 3: Check URL periodically + on tab focus
+function checkURLChange() {
+    if (location.href !== initialURL) {
+        location.reload();
+    }
+}
+setInterval(checkURLChange, 1000);
+document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) checkURLChange();
+});
+window.addEventListener('focus', checkURLChange);
+
 initApp();
 </script>
 </body>
