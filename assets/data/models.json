@@ -4,7 +4,7 @@
             "id": "heart",
             "name": "Huaman",
             "category": "NA",
-            "emoji": "🔬",
+            "emoji": "ð¬",
             "glb": "assets/models/heart.glb",
             "usdz": "assets/models/heart.usdz",
             "cameraOrbit": "30deg 75deg 2.5m",
@@ -14,7 +14,7 @@
                 {
                     "title": "",
                     "duration": "",
-                    "emoji": "🎬",
+                    "emoji": "ð¬",
                     "url": "assets/videos/WhatsApp Video 2026-03-24 at 11.46.37 AM.mp4"
                 }
             ],
@@ -29,6 +29,35 @@
             "images": [
                 {
                     "src": "assets/images/WhatsApp Image 2026-03-22 at 8.33.04 PM.jpeg",
+                    "label": ""
+                }
+            ]
+        },
+        {
+            "id": "coin",
+            "name": "Sweaden Coin",
+            "category": "currency",
+            "emoji": "🔬",
+            "glb": "assets/models/the_parade_shield_of_king_erik_xiv_of_sweden.glb",
+            "usdz": "assets/models/The_Parade_Shield_of_King_Erik_XIV_of_Sweden IOS.usdz",
+            "cameraOrbit": "30deg 75deg 2.5m",
+            "description": "used in ancient time",
+            "tags": [
+                "tap"
+            ],
+            "videos": [
+                {
+                    "title": "Machinery",
+                    "duration": "",
+                    "emoji": "🎬",
+                    "url": "assets/videos/BKT.mp4"
+                }
+            ],
+            "audio": [],
+            "infoSections": [],
+            "images": [
+                {
+                    "src": "assets/images/Image Sequence_019_0000.jpg",
                     "label": ""
                 }
             ]
